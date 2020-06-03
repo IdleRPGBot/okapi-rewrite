@@ -81,8 +81,7 @@ async fn genchess(body: web::Json<ChessJson>) -> HttpResponse {
     let xml = &body.xml;
     let opts = resvg::Options::default();
     let tree = usvg::Tree::from_str(&xml, &opts.usvg).unwrap();
-    let backend = resvg::default_backend();
-    let mut img = backend.render_to_image(&tree, &opts).unwrap();
+    let mut img = resvg::backend_raqote::render_to_image(&tree, &opts).unwrap();
     let vect = img.make_vec();
     let final_image = encode_png(&image::RgbImage::from_vec(390, 390, vect).unwrap()).unwrap();
     HttpResponse::Ok()
