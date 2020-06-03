@@ -70,24 +70,45 @@ async fn genadventures(body: web::Json<AdventuresJson>) -> HttpResponse {
         let mut new_image = ADVENTURES[idx].clone();
         let white = Rgb([0u8, 0u8, 0u8]);
         let scale = Scale { x: 20.0, y: 20.0 };
-        draw_text_mut(
-            &mut new_image,
-            white,
-            314,
-            148,
-            scale,
-            &TRAVITIA_FONT,
-            &format!("{}% to", chance_min),
-        );
-        draw_text_mut(
-            &mut new_image,
-            white,
-            314,
-            168,
-            scale,
-            &TRAVITIA_FONT,
-            &format!("{}%", chance_max),
-        );
+        if idx > 9 && idx < 20 {
+            draw_text_mut(
+                &mut new_image,
+                white,
+                314,
+                168,
+                scale,
+                &TRAVITIA_FONT,
+                &format!("{}% to", chance_min),
+            );
+            draw_text_mut(
+                &mut new_image,
+                white,
+                314,
+                188,
+                scale,
+                &TRAVITIA_FONT,
+                &format!("{}%", chance_max),
+            );
+        } else {
+            draw_text_mut(
+                &mut new_image,
+                white,
+                314,
+                148,
+                scale,
+                &TRAVITIA_FONT,
+                &format!("{}% to", chance_min),
+            );
+            draw_text_mut(
+                &mut new_image,
+                white,
+                314,
+                168,
+                scale,
+                &TRAVITIA_FONT,
+                &format!("{}%", chance_max),
+            );
+        }
         let final_image = encode_png(&new_image).unwrap();
         let buf = format!("data:image/png;base64,{}", base64::encode(&final_image));
         images.push(buf);
