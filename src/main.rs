@@ -10,8 +10,9 @@ use imageproc::drawing::draw_text_mut;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::io::Read;
 use std::ops::Deref;
-use std::{env, io};
+use std::{env, fs::File, io, path};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AdventuresJson {
@@ -20,21 +21,27 @@ struct AdventuresJson {
 
 lazy_static! {
     static ref TRAVITIA_FONT: Font<'static> = {
-        let font = Vec::from(
-            include_bytes!("/home/jens/okapi-rewrite/assets/fonts/TravMedium.otf") as &[u8],
-        );
-        let font = Font::try_from_vec(font).unwrap();
+        let mut path = env::current_dir().unwrap();
+        path.push("assets");
+        path.push("fonts");
+        path.push("TravMedium.otf");
+        let mut f = File::open(path).unwrap();
+        let mut buf = Vec::new();
+        f.read_to_end(&mut buf).unwrap();
+        let font = Font::try_from_vec(buf).unwrap();
         font
     };
     static ref ADVENTURES: Vec<RgbImage> = {
+        let mut base = env::current_dir().unwrap();
+        base.push("assets");
+        base.push("images");
+        base.push("adventures");
+        let base = base.into_os_string();
         let mut images = Vec::new();
         for i in 1..30 {
-            let image = image::open(format!(
-                "/home/jens/okapi-rewrite/assets/images/adventures/{}.png",
-                i
-            ))
-            .unwrap()
-            .to_rgb();
+            let mut path = path::PathBuf::from(base.clone());
+            path.push(format!("{}.png", i));
+            let image = image::open(path).unwrap().to_rgb();
             images.push(image);
         }
         images
