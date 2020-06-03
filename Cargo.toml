@@ -5,17 +5,20 @@ authors = ["Jens Reidel <jens@troet.org>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 actix-web = "2"
 actix-rt = "1"
+base64 = "0.12"
 env_logger = "0.7"
+image = "0.23"
+lazy_static = "1.4"
+rusttype = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-rusttype = "0.9"
-lazy_static = "1.4"
-image = "0.23"
-base64 = "0.12"
+
+[dependencies.resvg]
+version = "0.9"
+features = ["raqote-backend"]
 
 [dependencies.imageproc]
 git = "https://github.com/image-rs/imageproc.git"

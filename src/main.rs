@@ -7,6 +7,7 @@ use actix_web::{get, middleware, post, web, App, HttpResponse, HttpServer};
 use base64;
 use image::{png::PNGEncoder, ImageBuffer, ImageError, Pixel, Rgb, RgbImage};
 use imageproc::drawing::draw_text_mut;
+use resvg::prelude::*;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -19,18 +20,29 @@ struct AdventuresJson {
     percentages: Value,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ChessJson {
+    xml: String,
+}
+
+fn load_font(name: &str) -> Font {
+    let mut path = env::current_dir().unwrap();
+    path.push("assets");
+    path.push("fonts");
+    path.push(name);
+    let mut f = File::open(path).unwrap();
+    let mut buf = Vec::new();
+    f.read_to_end(&mut buf).unwrap();
+    let font = Font::try_from_vec(buf).unwrap();
+    font
+}
+
+fn load_image(path: path::PathBuf) -> RgbImage {
+    image::open(path).unwrap().to_rgb()
+}
+
 lazy_static! {
-    static ref TRAVITIA_FONT: Font<'static> = {
-        let mut path = env::current_dir().unwrap();
-        path.push("assets");
-        path.push("fonts");
-        path.push("TravMedium.otf");
-        let mut f = File::open(path).unwrap();
-        let mut buf = Vec::new();
-        f.read_to_end(&mut buf).unwrap();
-        let font = Font::try_from_vec(buf).unwrap();
-        font
-    };
+    static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf");
     static ref ADVENTURES: Vec<RgbImage> = {
         let mut base = env::current_dir().unwrap();
         base.push("assets");
@@ -41,8 +53,7 @@ lazy_static! {
         for i in 1..30 {
             let mut path = path::PathBuf::from(base.clone());
             path.push(format!("{}.png", i));
-            let image = image::open(path).unwrap().to_rgb();
-            images.push(image);
+            images.push(load_image(path));
         }
         images
     };
@@ -63,6 +74,20 @@ where
 async fn index() -> HttpResponse {
     // For metrics
     HttpResponse::Ok().content_type("text/plain").body("1")
+}
+
+#[post("/api/genchess")]
+async fn genchess(body: web::Json<ChessJson>) -> HttpResponse {
+    let xml = &body.xml;
+    let opts = resvg::Options::default();
+    let tree = usvg::Tree::from_str(&xml, &opts.usvg).unwrap();
+    let backend = resvg::default_backend();
+    let mut img = backend.render_to_image(&tree, &opts).unwrap();
+    let vect = img.make_vec();
+    let final_image = encode_png(&image::RgbImage::from_vec(390, 390, vect).unwrap()).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
 }
 
 #[post("/api/genadventures")]
@@ -134,6 +159,7 @@ async fn main() -> io::Result<()> {
             .data(web::JsonConfig::default().limit(4096))
             .service(index)
             .service(genadventures)
+            .service(genchess)
     })
     .bind("0.0.0.0:3000")?
     .run()
