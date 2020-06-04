@@ -79,6 +79,38 @@ fn load_image_rgba(path: path::PathBuf) -> RgbaImage {
     image::open(path).unwrap().to_rgba()
 }
 
+fn wrap(thing: &str, n: usize) -> Vec<&str> {
+    let mut slices: Vec<&str> = Vec::new();
+    let mut thing = thing.clone();
+
+    // while string is not empty
+    // take n characters
+    // check witch one was the last space or if the end of the line is reached
+    // then => push them in slices
+    // then => remove them from the string
+
+    while thing != "" {
+        let mut last_space = 0;
+
+        for i in 0..thing.len() {
+            if i == n {
+                break;
+            }
+            if thing.chars().nth(i).unwrap() == ' ' {
+                last_space = i;
+            }
+            if i == thing.len() - 1 {
+                last_space = thing.len();
+            }
+        }
+
+        // insert into array
+        slices.push(thing[0..last_space].trim());
+        thing = &thing[last_space..];
+    }
+    slices
+}
+
 lazy_static! {
     static ref CONFIG: Value = {
         let mut file = File::open("config.json").expect("Config not found");
@@ -355,8 +387,58 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         &body.level,
     );
     draw_text_mut(&mut img, color, 284, 337, scale, &TRAVITIA_FONT, "soon™");
-    // TODO: Wrap text for item names
-    // END TODO
+    if body.sword_name.len() < 18 {
+        scale = Scale { x: 35.0, y: 45.0 };
+        draw_text_mut(
+            &mut img,
+            color,
+            165,
+            495,
+            scale,
+            &TRAVITIA_FONT,
+            &body.sword_name,
+        );
+    } else {
+        scale = Scale { x: 19.0, y: 19.0 };
+        let rows = wrap(&body.sword_name, 26);
+        for (i, line) in rows.iter().enumerate() {
+            draw_text_mut(
+                &mut img,
+                color,
+                165,
+                495 + ((i as u32) * 20),
+                scale,
+                &TRAVITIA_FONT,
+                &line,
+            );
+        }
+    }
+    if body.shield_name.len() < 18 {
+        scale = Scale { x: 35.0, y: 45.0 };
+        draw_text_mut(
+            &mut img,
+            color,
+            165,
+            574,
+            scale,
+            &TRAVITIA_FONT,
+            &body.shield_name,
+        );
+    } else {
+        scale = Scale { x: 19.0, y: 19.0 };
+        let rows = wrap(&body.shield_name, 26);
+        for (i, line) in rows.iter().enumerate() {
+            draw_text_mut(
+                &mut img,
+                color,
+                165,
+                574 + ((i as u32) * 20),
+                scale,
+                &TRAVITIA_FONT,
+                &line,
+            );
+        }
+    }
     scale = Scale { x: 52.0, y: 52.0 };
     draw_text_mut(&mut img, color, 519, 49, scale, &TRAVITIA_FONT, &body.money);
     draw_text_mut(&mut img, color, 519, 121, scale, &TRAVITIA_FONT, "soon™");
