@@ -5,14 +5,18 @@ extern crate image;
 
 use actix_web::{get, middleware, post, web, App, HttpResponse, HttpServer};
 use base64;
-use image::{png::PNGEncoder, ImageBuffer, ImageError, Pixel, Rgb, RgbImage};
+use image::{
+    imageops::overlay, png::PNGEncoder, ImageBuffer, ImageError, Pixel, Rgb, RgbImage, RgbaImage,
+};
 use imageproc::drawing::draw_text_mut;
+use reqwest::{header::HeaderMap, header::HeaderName, Client};
 use resvg::prelude::*;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{from_str, Value};
 use std::io::Read;
 use std::ops::Deref;
+use std::time::Duration;
 use std::{env, fs::File, io, path};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,6 +27,11 @@ struct AdventuresJson {
 #[derive(Debug, Serialize, Deserialize)]
 struct ChessJson {
     xml: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct OverlayJson {
+    url: String,
 }
 
 fn load_font(name: &str) -> Font {
@@ -37,12 +46,30 @@ fn load_font(name: &str) -> Font {
     font
 }
 
-fn load_image(path: path::PathBuf) -> RgbImage {
+fn load_image_rgb(path: path::PathBuf) -> RgbImage {
     image::open(path).unwrap().to_rgb()
 }
 
+fn load_image_rgba(path: path::PathBuf) -> RgbaImage {
+    image::open(path).unwrap().to_rgba()
+}
+
 lazy_static! {
+    static ref CONFIG: Value = {
+        let mut file = File::open("config.json").expect("Config not found");
+        let mut data = String::new();
+        file.read_to_string(&mut data).unwrap();
+        let json = from_str(&data).expect("Invalid JSON");
+        json
+    };
     static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf");
+    static ref PROFILE: RgbaImage = {
+        let mut base = env::current_dir().unwrap();
+        base.push("assets");
+        base.push("images");
+        base.push("ProfileOverlayNew.png");
+        load_image_rgba(base)
+    };
     static ref ADVENTURES: Vec<RgbImage> = {
         let mut base = env::current_dir().unwrap();
         base.push("assets");
@@ -53,10 +80,39 @@ lazy_static! {
         for i in 1..30 {
             let mut path = path::PathBuf::from(base.clone());
             path.push(format!("{}.png", i));
-            images.push(load_image(path));
+            images.push(load_image_rgb(path));
         }
         images
     };
+    static ref CLIENT: Client = Client::new();
+    static ref HEADERS: HeaderMap = {
+        let mut headers = HeaderMap::new();
+        let key = CONFIG["proxy_auth"].as_str().unwrap().parse().unwrap();
+        let proxy_authorization_key =
+            HeaderName::from_lowercase(b"proxy-authorization-key").unwrap();
+        let accept = HeaderName::from_lowercase(b"accept").unwrap();
+        headers.insert(proxy_authorization_key, key);
+        headers.insert(accept, "application/json".parse().unwrap());
+        headers
+    };
+}
+
+async fn fetch(url: &str) -> actix_web::web::Bytes {
+    let mut headers = HEADERS.clone();
+    let requested_uri = HeaderName::from_lowercase(b"requested-uri").unwrap();
+    let proxy_base = CONFIG["proxy"].as_str().unwrap();
+    headers.insert(requested_uri, url.parse().unwrap());
+    let resp = CLIENT
+        .get(proxy_base)
+        .headers(headers)
+        .timeout(Duration::new(3, 0))
+        .send()
+        .await
+        .unwrap()
+        .bytes()
+        .await
+        .unwrap();
+    resp
 }
 
 fn encode_png<P, Container>(img: &ImageBuffer<P, Container>) -> Result<Vec<u8>, ImageError>
@@ -74,6 +130,19 @@ where
 async fn index() -> HttpResponse {
     // For metrics
     HttpResponse::Ok().content_type("text/plain").body("1")
+}
+
+#[post("/api/genoverlay")]
+async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
+    let url = &body.url;
+    let res = fetch(&url).await;
+    let mut img = image::load_from_memory(&res).unwrap().to_rgba();
+    let img2 = PROFILE.clone();
+    overlay(&mut img, &img2, 0, 0);
+    let final_image = encode_png(&img).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
 }
 
 #[post("/api/genchess")]
@@ -166,6 +235,7 @@ async fn main() -> io::Result<()> {
             .service(index)
             .service(genadventures)
             .service(genchess)
+            .service(genoverlay)
     })
     .bind("0.0.0.0:3000")?
     .run()
