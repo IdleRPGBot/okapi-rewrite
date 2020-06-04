@@ -6,7 +6,9 @@ extern crate image;
 use actix_web::{get, middleware, post, web, App, HttpResponse, HttpServer};
 use base64;
 use image::{
-    imageops::overlay, png::PNGEncoder, ImageBuffer, ImageError, Pixel, Rgb, RgbImage, RgbaImage,
+    imageops::{overlay, resize, FilterType},
+    png::PNGEncoder,
+    ImageBuffer, ImageError, Pixel, Rgb, RgbImage, RgbaImage,
 };
 use imageproc::drawing::draw_text_mut;
 use reqwest::{header::HeaderMap, header::HeaderName, Client};
@@ -136,7 +138,13 @@ async fn index() -> HttpResponse {
 async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
     let url = &body.url;
     let res = fetch(&url).await;
-    let mut img = image::load_from_memory(&res).unwrap().to_rgba();
+    // Lanczos3 is best, but has slow speed
+    let mut img = resize(
+        &image::load_from_memory(&res).unwrap().to_rgba(),
+        800,
+        650,
+        FilterType::Lanczos3,
+    );
     let img2 = PROFILE.clone();
     overlay(&mut img, &img2, 0, 0);
     let final_image = encode_png(&img).unwrap();
