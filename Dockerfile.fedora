@@ -2,7 +2,7 @@ FROM fedora-minimal:32 AS builder
 
 WORKDIR /build
 
-RUN microdnf install -y g++ cmake gcc make harfbuzz-devel rust cargo
+RUN microdnf install -y g++ cmake gcc make harfbuzz-devel openssl-devel rust cargo
 
 COPY Cargo.toml .
 COPY Cargo.lock .

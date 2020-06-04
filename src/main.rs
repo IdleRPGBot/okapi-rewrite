@@ -36,6 +36,27 @@ struct OverlayJson {
     url: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ProfileJson {
+    name: String,
+    image: String,
+    race: String,
+    color: String,
+    classes: Value, // Array of Strings
+    damage: String,
+    defense: String,
+    sword_name: String,
+    shield_name: String,
+    level: String, // might wanna make it u8
+    money: String,
+    god: String,
+    guild: String,
+    marriage: String,
+    pvp_wins: String,
+    adventure: String,
+    icons: Value, // Array of Strings
+}
+
 fn load_font(name: &str) -> Font {
     let mut path = env::current_dir().unwrap();
     path.push("assets");
@@ -134,6 +155,11 @@ async fn index() -> HttpResponse {
     HttpResponse::Ok().content_type("text/plain").body("1")
 }
 
+#[post("/api/genprofile")]
+async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
+    HttpResponse::Ok().content_type("text/plain").body("1")
+}
+
 #[post("/api/genoverlay")]
 async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
     let url = &body.url;
@@ -148,9 +174,8 @@ async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
     let img2 = PROFILE.clone();
     overlay(&mut img, &img2, 0, 0);
     let final_image = encode_png(&img).unwrap();
-    HttpResponse::Ok()
-        .content_type("image/png")
-        .body(final_image)
+    let buf = base64::encode(&final_image);
+    HttpResponse::Ok().content_type("text/plain").body(buf)
 }
 
 #[post("/api/genchess")]
@@ -244,6 +269,7 @@ async fn main() -> io::Result<()> {
             .service(genadventures)
             .service(genchess)
             .service(genoverlay)
+            .service(genprofile)
     })
     .bind("0.0.0.0:3000")?
     .run()
