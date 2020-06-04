@@ -8,7 +8,7 @@ use base64;
 use image::{
     imageops::{overlay, resize, FilterType},
     png::PNGEncoder,
-    ImageBuffer, ImageError, Pixel, Rgb, RgbImage, RgbaImage,
+    ImageBuffer, ImageError, Pixel, Rgb, RgbImage, Rgba, RgbaImage,
 };
 use imageproc::drawing::draw_text_mut;
 use reqwest::{header::HeaderMap, header::HeaderName, Client};
@@ -16,10 +16,12 @@ use resvg::prelude::*;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
+use std::collections::HashMap;
+use std::fs::File;
 use std::io::Read;
 use std::ops::Deref;
 use std::time::Duration;
-use std::{env, fs::File, io, path};
+use std::{env, io, path};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AdventuresJson {
@@ -41,7 +43,7 @@ struct ProfileJson {
     name: String,
     image: String,
     race: String,
-    color: String,
+    color: Value,   // RGBA array
     classes: Value, // Array of Strings
     damage: String,
     defense: String,
@@ -86,12 +88,138 @@ lazy_static! {
         json
     };
     static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf");
+    static ref CAVIAR_DREAMS: Font<'static> = load_font("CaviarDreams.ttf");
+    static ref OPEN_SANS_EMOJI: Font<'static> = load_font("OpenSansEmoji.ttf");
+    static ref K_GOTHIC: Font<'static> = load_font("K Gothic.ttf");
     static ref PROFILE: RgbaImage = {
         let mut base = env::current_dir().unwrap();
         base.push("assets");
         base.push("images");
         base.push("ProfileOverlayNew.png");
         load_image_rgba(base)
+    };
+    static ref DEFAULT_PROFILE: RgbaImage = load_image_rgba(
+        env::current_dir()
+            .unwrap()
+            .join("assets")
+            .join("images")
+            .join("ProfileNew.png")
+    );
+    static ref CASTS: HashMap<String, RgbaImage> = {
+        let mut base = env::current_dir().unwrap();
+        base.push("assets");
+        base.push("images");
+        base.push("casts");
+        let mut map: HashMap<String, RgbaImage> = HashMap::new();
+        map.insert(
+            "thief".to_string(),
+            resize(
+                &load_image_rgba(base.join("thief.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "paragon".to_string(),
+            resize(
+                &load_image_rgba(base.join("paragon.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "ranger".to_string(),
+            resize(
+                &load_image_rgba(base.join("ranger.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "warrior".to_string(),
+            resize(
+                &load_image_rgba(base.join("warrior.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "mage".to_string(),
+            resize(
+                &load_image_rgba(base.join("mage.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "raider".to_string(),
+            resize(
+                &load_image_rgba(base.join("raider.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "ritualist".to_string(),
+            resize(
+                &load_image_rgba(base.join("ritualist.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "human".to_string(),
+            resize(
+                &load_image_rgba(base.join("human.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "elf".to_string(),
+            resize(
+                &load_image_rgba(base.join("elf.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "jikill".to_string(),
+            resize(
+                &load_image_rgba(base.join("jikill.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "dwarf".to_string(),
+            resize(
+                &load_image_rgba(base.join("dwarf.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map.insert(
+            "orc".to_string(),
+            resize(
+                &load_image_rgba(base.join("orc.png")),
+                22,
+                22,
+                FilterType::Lanczos3,
+            ),
+        );
+        map
     };
     static ref ADVENTURES: Vec<RgbImage> = {
         let mut base = env::current_dir().unwrap();
@@ -157,7 +285,136 @@ async fn index() -> HttpResponse {
 
 #[post("/api/genprofile")]
 async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
-    HttpResponse::Ok().content_type("text/plain").body("1")
+    let image_url = &body.image;
+    // Load or download their background image
+    let mut img: RgbaImage;
+    if image_url == "0" {
+        img = DEFAULT_PROFILE.clone();
+    } else {
+        let res = fetch(&image_url).await;
+        img = image::load_from_memory(&res).unwrap().to_rgba();
+    }
+    let color = body.color.as_array().unwrap();
+    let classes = body.classes.as_array().unwrap();
+    let classes = [classes[0].as_str().unwrap(), classes[1].as_str().unwrap()];
+    let r = color[0].as_i64().unwrap() as u8;
+    let g = color[1].as_i64().unwrap() as u8;
+    let b = color[2].as_i64().unwrap() as u8;
+    let a = (color[3].as_f64().unwrap() * 255.0) as u8;
+    let color = Rgba([r, g, b, a]);
+    // Font size
+    let mut scale = Scale { x: 26.0, y: 26.0 };
+    draw_text_mut(&mut img, color, 221, 143, scale, &TRAVITIA_FONT, &body.name);
+    draw_text_mut(&mut img, color, 228, 185, scale, &TRAVITIA_FONT, &body.race);
+    scale = Scale { x: 23.0, y: 23.0 };
+    draw_text_mut(
+        &mut img,
+        color,
+        228,
+        235,
+        scale,
+        &TRAVITIA_FONT,
+        &classes[0],
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        228,
+        259,
+        scale,
+        &TRAVITIA_FONT,
+        &classes[1],
+    );
+    scale = Scale { x: 15.0, y: 22.0 };
+    draw_text_mut(
+        &mut img,
+        color,
+        111,
+        295,
+        scale,
+        &TRAVITIA_FONT,
+        &body.damage,
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        111,
+        337,
+        scale,
+        &TRAVITIA_FONT,
+        &body.defense,
+    );
+    scale = Scale { x: 22.0, y: 22.0 };
+    draw_text_mut(
+        &mut img,
+        color,
+        284,
+        295,
+        scale,
+        &TRAVITIA_FONT,
+        &body.level,
+    );
+    draw_text_mut(&mut img, color, 284, 337, scale, &TRAVITIA_FONT, "soon™");
+    // TODO: Wrap text for item names
+    // END TODO
+    scale = Scale { x: 52.0, y: 52.0 };
+    draw_text_mut(&mut img, color, 519, 49, scale, &TRAVITIA_FONT, &body.money);
+    draw_text_mut(&mut img, color, 519, 121, scale, &TRAVITIA_FONT, "soon™");
+    draw_text_mut(&mut img, color, 519, 204, scale, &TRAVITIA_FONT, &body.god);
+    draw_text_mut(
+        &mut img,
+        color,
+        519,
+        288,
+        scale,
+        &TRAVITIA_FONT,
+        &body.guild,
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        519,
+        379,
+        scale,
+        &TRAVITIA_FONT,
+        &body.marriage,
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        519,
+        459,
+        scale,
+        &TRAVITIA_FONT,
+        &body.pvp_wins,
+    );
+    let mut adv = body.adventure.as_str().lines();
+    let line_1 = adv.next().unwrap();
+    // Is there a second line?
+    match adv.next() {
+        Some(line_2) => {
+            scale = Scale { x: 34.0, y: 34.0 };
+            draw_text_mut(&mut img, color, 519, 538, scale, &TRAVITIA_FONT, line_1);
+            draw_text_mut(&mut img, color, 519, 576, scale, &TRAVITIA_FONT, line_2);
+        }
+        None => {
+            draw_text_mut(&mut img, color, 519, 545, scale, &TRAVITIA_FONT, line_1);
+        }
+    }
+    overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
+    let icons = body.icons.as_array().unwrap();
+    let icon_1 = icons[0].as_str().unwrap();
+    let icon_2 = icons[1].as_str().unwrap();
+    if icon_1 != "none" {
+        overlay(&mut img, &CASTS[icon_1], 205, 232);
+    }
+    if icon_2 != "none" {
+        overlay(&mut img, &CASTS[icon_2], 205, 254);
+    }
+    let final_image = encode_png(&img).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
 }
 
 #[post("/api/genoverlay")]
