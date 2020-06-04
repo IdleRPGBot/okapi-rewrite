@@ -79,11 +79,18 @@ async fn index() -> HttpResponse {
 #[post("/api/genchess")]
 async fn genchess(body: web::Json<ChessJson>) -> HttpResponse {
     let xml = &body.xml;
-    let opts = resvg::Options::default();
+    let opts = resvg::Options {
+        background: None,
+        fit_to: resvg::FitTo::Width(390),
+        usvg: resvg::Options::default().usvg,
+    };
     let tree = usvg::Tree::from_str(&xml, &opts.usvg).unwrap();
     let mut img = resvg::backend_raqote::render_to_image(&tree, &opts).unwrap();
     let vect = img.make_vec();
-    let final_image = encode_png(&image::RgbImage::from_vec(390, 390, vect).unwrap()).unwrap();
+    let final_image = encode_png(
+        &image::RgbaImage::from_vec(img.height() as u32, img.width() as u32, vect).unwrap(),
+    )
+    .unwrap();
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
