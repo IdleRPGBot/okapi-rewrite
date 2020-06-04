@@ -6,7 +6,7 @@ extern crate image;
 use actix_web::{get, middleware, post, web, App, HttpResponse, HttpServer};
 use base64;
 use image::{
-    imageops::{overlay, resize, FilterType},
+    imageops::{invert, overlay, resize, FilterType},
     png::PNGEncoder,
     ImageBuffer, ImageError, Pixel, Rgb, RgbImage, Rgba, RgbaImage,
 };
@@ -57,6 +57,11 @@ struct ProfileJson {
     pvp_wins: String,
     adventure: String,
     icons: Value, // Array of Strings
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ImageJson {
+    image: String, // URL
 }
 
 fn load_font(name: &str) -> Font {
@@ -313,6 +318,31 @@ where
 async fn index() -> HttpResponse {
     // For metrics
     HttpResponse::Ok().content_type("text/plain").body("1")
+}
+
+#[post("/api/imageops/pixel")]
+async fn pixelate(body: web::Json<ImageJson>) -> HttpResponse {
+    let res = fetch(&body.image).await;
+    let img = image::load_from_memory(&res).unwrap().to_rgba();
+    let buf = resize(&img, 1024, 1024, FilterType::Nearest);
+    let final_image = encode_png(&buf).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
+}
+
+#[post("/api/imageops/invert")]
+async fn invert_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
+    let res = fetch(&body.image).await;
+    let mut img = image::load_from_memory(&res).unwrap().to_rgba();
+    println!("{:?}", img.get_pixel(0, 0));
+    invert(&mut img);
+    println!("{:?}", img.get_pixel(0, 0));
+    let final_image = encode_png(&img).unwrap();
+    println!("{:?}", final_image[0]);
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
 }
 
 #[post("/api/genprofile")]
@@ -609,6 +639,8 @@ async fn main() -> io::Result<()> {
             .service(genchess)
             .service(genoverlay)
             .service(genprofile)
+            .service(pixelate)
+            .service(invert_endpoint)
     })
     .bind("0.0.0.0:3000")?
     .run()
