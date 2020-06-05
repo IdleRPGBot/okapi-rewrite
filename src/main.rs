@@ -356,10 +356,10 @@ async fn edges_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
 
 #[derive(Debug)]
 struct Intensity {
-    val: u8,
-    r: u8,
-    g: u8,
-    b: u8,
+    val: i32,
+    r: i32,
+    g: i32,
+    b: i32,
 }
 
 #[post("/api/imageops/oil")]
@@ -388,9 +388,11 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
     for y in 0..height {
         for x in 0..width {
             pixel_intensity_count = HashMap::new();
-            for yy in -radius..radius {
+
+            // Find intensities of nearest pixels within radius
+            for yy in -radius..=radius {
                 let yyy = (y as i32) + yy;
-                for xx in -radius..radius {
+                for xx in -radius..=radius {
                     let xxx = (x as i32) + xx;
                     if yyy > 0 && yyy < (height as i32) && xxx > 0 && xxx < (width as i32) {
                         let idx_x = xxx as usize;
@@ -400,18 +402,18 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
                         match pixel_intensity_count.get_mut(&(intensity_val as usize)) {
                             Some(val) => {
                                 val.val = val.val + 1;
-                                val.r = val.r + pix[0];
-                                val.g = val.g + pix[1];
-                                val.b = val.b + pix[2];
+                                val.r = val.r + pix[0] as i32;
+                                val.g = val.g + pix[1] as i32;
+                                val.b = val.b + pix[2] as i32;
                             }
                             None => {
                                 pixel_intensity_count.insert(
                                     intensity_val as usize,
                                     Intensity {
                                         val: 1,
-                                        r: pix[0],
-                                        g: pix[1],
-                                        b: pix[2],
+                                        r: pix[0] as i32,
+                                        g: pix[1] as i32,
+                                        b: pix[2] as i32,
                                     },
                                 );
                             }
@@ -428,9 +430,9 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
                 x,
                 y,
                 Rgba::<u8>([
-                    (cur_max.r / cur_max.val),
-                    (cur_max.g / cur_max.val),
-                    (cur_max.b / cur_max.val),
+                    (cur_max.r / cur_max.val) as u8,
+                    (cur_max.g / cur_max.val) as u8,
+                    (cur_max.b / cur_max.val) as u8,
                     255,
                 ]),
             )
