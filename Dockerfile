@@ -16,7 +16,7 @@ COPY . .
 RUN cargo build --release && \
     strip /build/target/release/okapi-rewrite
 
-FROM fedora-minimal:32
+FROM registry.fedoraproject.org/fedora-minimal:32
 
 WORKDIR /okapi
 
