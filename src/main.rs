@@ -367,25 +367,27 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
     let res = fetch(&body.image).await;
     let img = image::load_from_memory(&res).unwrap().to_rgba();
     let radius = 4 as i32;
-    let intensity = 55;
+    let intensity = 55.0;
     let width = img.width();
     let height = img.height();
     let mut target = image::RgbaImage::new(width, height);
-    let mut pixel_intensity_count: Vec<Intensity>;
+    let mut pixel_intensity_count: HashMap<usize, Intensity>;
     let mut intensity_lut = vec![vec![0; width as usize]; height as usize];
 
     for y in 0..height {
-        intensity_lut.push(Vec::new());
         for x in 0..width {
             let current_val = img.get_pixel(x, y).channels();
-            let avg = (current_val[0] + current_val[1] + current_val[2]) / 3;
-            intensity_lut[y as usize][x as usize] = (avg * intensity) / 255;
+            let avg = (current_val[0] as i32 + current_val[1] as i32 + current_val[2] as i32)
+                as f64
+                / 3.0;
+            let val = (avg * intensity) / 255.0;
+            intensity_lut[y as usize][x as usize] = val.round() as usize;
         }
     }
 
     for y in 0..height {
         for x in 0..width {
-            pixel_intensity_count = Vec::new();
+            pixel_intensity_count = HashMap::new();
             for yy in -radius..radius {
                 let yyy = (y as i32) + yy;
                 for xx in -radius..radius {
@@ -395,7 +397,7 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
                         let idx_y = yyy as usize;
                         let intensity_val = intensity_lut[idx_y][idx_x];
                         let pix = img.get_pixel(idx_x as u32, idx_y as u32).channels();
-                        match pixel_intensity_count.get_mut(intensity_val as usize) {
+                        match pixel_intensity_count.get_mut(&(intensity_val as usize)) {
                             Some(val) => {
                                 val.val = val.val + 1;
                                 val.r = val.r + pix[0];
@@ -418,11 +420,10 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
                 }
             }
 
-            pixel_intensity_count.sort_by(|a, b| (b.val - a.val).cmp(&0));
+            let mut keys: Vec<_> = pixel_intensity_count.iter().collect();
+            keys.sort_by(|a, b| (b.1.val - a.1.val).cmp(&0));
 
-            let cur_max = &pixel_intensity_count[0];
-            println!("{:?}", cur_max);
-            println!("{:?}", cur_max.r / cur_max.val);
+            let cur_max = &pixel_intensity_count[keys[0].0];
             target.put_pixel(
                 x,
                 y,
