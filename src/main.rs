@@ -335,11 +335,8 @@ async fn pixelate(body: web::Json<ImageJson>) -> HttpResponse {
 async fn invert_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
     let res = fetch(&body.image).await;
     let mut img = image::load_from_memory(&res).unwrap().to_rgba();
-    println!("{:?}", img.get_pixel(0, 0));
     invert(&mut img);
-    println!("{:?}", img.get_pixel(0, 0));
     let final_image = encode_png(&img).unwrap();
-    println!("{:?}", final_image[0]);
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
