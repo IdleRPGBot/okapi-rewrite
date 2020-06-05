@@ -11,6 +11,7 @@ use image::{
     ImageBuffer, ImageError, Pixel, Rgb, RgbImage, Rgba, RgbaImage,
 };
 use imageproc::drawing::draw_text_mut;
+use imageproc::edges::canny;
 use reqwest::{header::HeaderMap, header::HeaderName, Client};
 use resvg::prelude::*;
 use rusttype::{Font, Scale};
@@ -342,6 +343,104 @@ async fn invert_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
         .body(final_image)
 }
 
+#[post("/api/imageops/edges")]
+async fn edges_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
+    let res = fetch(&body.image).await;
+    let img = image::load_from_memory(&res).unwrap().to_luma();
+    let buf = canny(&img, 25.0, 80.0);
+    let final_image = encode_png(&buf).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
+}
+
+#[derive(Debug)]
+struct Intensity {
+    val: u8,
+    r: u8,
+    g: u8,
+    b: u8,
+}
+
+#[post("/api/imageops/oil")]
+async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
+    let res = fetch(&body.image).await;
+    let img = image::load_from_memory(&res).unwrap().to_rgba();
+    let radius = 4 as i32;
+    let intensity = 55;
+    let width = img.width();
+    let height = img.height();
+    let mut target = image::RgbaImage::new(width, height);
+    let mut pixel_intensity_count: Vec<Intensity>;
+    let mut intensity_lut = vec![vec![0; width as usize]; height as usize];
+
+    for y in 0..height {
+        intensity_lut.push(Vec::new());
+        for x in 0..width {
+            let current_val = img.get_pixel(x, y).channels();
+            let avg = (current_val[0] + current_val[1] + current_val[2]) / 3;
+            intensity_lut[y as usize][x as usize] = (avg * intensity) / 255;
+        }
+    }
+
+    for y in 0..height {
+        for x in 0..width {
+            pixel_intensity_count = Vec::new();
+            for yy in -radius..radius {
+                let yyy = (y as i32) + yy;
+                for xx in -radius..radius {
+                    let xxx = (x as i32) + xx;
+                    if yyy > 0 && yyy < (height as i32) && xxx > 0 && xxx < (width as i32) {
+                        let idx_x = xxx as usize;
+                        let idx_y = yyy as usize;
+                        let intensity_val = intensity_lut[idx_y][idx_x];
+                        let pix = img.get_pixel(idx_x as u32, idx_y as u32).channels();
+                        match pixel_intensity_count.get_mut(intensity_val as usize) {
+                            Some(val) => {
+                                val.val = val.val + 1;
+                                val.r = val.r + pix[0];
+                                val.g = val.g + pix[1];
+                                val.b = val.b + pix[2];
+                            }
+                            None => {
+                                pixel_intensity_count.insert(
+                                    intensity_val as usize,
+                                    Intensity {
+                                        val: 1,
+                                        r: pix[0],
+                                        g: pix[1],
+                                        b: pix[2],
+                                    },
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
+            pixel_intensity_count.sort_by(|a, b| (b.val - a.val).cmp(&0));
+
+            let cur_max = &pixel_intensity_count[0];
+            println!("{:?}", cur_max);
+            println!("{:?}", cur_max.r / cur_max.val);
+            target.put_pixel(
+                x,
+                y,
+                Rgba::<u8>([
+                    (cur_max.r / cur_max.val),
+                    (cur_max.g / cur_max.val),
+                    (cur_max.b / cur_max.val),
+                    255,
+                ]),
+            )
+        }
+    }
+    let final_image = encode_png(&target).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
+}
+
 #[post("/api/genprofile")]
 async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     let image_url = &body.image;
@@ -638,6 +737,8 @@ async fn main() -> io::Result<()> {
             .service(genprofile)
             .service(pixelate)
             .service(invert_endpoint)
+            .service(edges_endpoint)
+            .service(oil_endpoint)
     })
     .bind("0.0.0.0:3000")?
     .run()
