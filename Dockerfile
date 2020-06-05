@@ -1,4 +1,4 @@
-FROM fedora-minimal:32 AS builder
+FROM registry.fedoraproject.org/fedora-minimal:32 AS builder
 
 WORKDIR /build
 
