@@ -420,10 +420,10 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
                 }
             }
 
-            let mut keys: Vec<_> = pixel_intensity_count.iter().collect();
-            keys.sort_by(|a, b| (b.1.val - a.1.val).cmp(&0));
+            let mut map_vec: Vec<_> = pixel_intensity_count.iter().collect();
+            map_vec.sort_by(|a, b| (b.1.val - a.1.val).cmp(&0));
 
-            let cur_max = &pixel_intensity_count[keys[0].0];
+            let cur_max = map_vec[0].1;
             target.put_pixel(
                 x,
                 y,
