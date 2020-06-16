@@ -2,18 +2,21 @@ FROM registry.fedoraproject.org/fedora-minimal:32 AS builder
 
 WORKDIR /build
 
-RUN microdnf install -y g++ cmake gcc make harfbuzz-devel openssl-devel rust cargo
+RUN microdnf install -y g++ cmake gcc make harfbuzz-devel openssl-devel && \
+    curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
 COPY Cargo.toml .
 COPY Cargo.lock .
 
-RUN mkdir src && \
+RUN source $HOME/.cargo/env && \
+    mkdir src && \
     echo "// dummy file" > src/lib.rs && \
     cargo build --release
 
 COPY . .
 
-RUN cargo build --release && \
+RUN source $HOME/.cargo/env && \
+    cargo build --release && \
     strip /build/target/release/okapi-rewrite
 
 FROM registry.fedoraproject.org/fedora-minimal:32
