@@ -7,6 +7,7 @@ use actix_web::{get, middleware, post, web, App, HttpResponse, HttpServer};
 use base64;
 use image::{
     imageops::{invert, overlay, resize, FilterType},
+    io::Reader,
     png::PNGEncoder,
     ImageBuffer, ImageError, Pixel, Rgb, RgbImage, Rgba, RgbaImage,
 };
@@ -19,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Cursor, Read};
 use std::ops::Deref;
 use std::time::Duration;
 use std::{env, io, path};
@@ -453,7 +454,15 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         img = DEFAULT_PROFILE.clone();
     } else {
         let res = fetch(&image_url).await;
-        img = image::load_from_memory(&res).unwrap().to_rgba();
+        let b = Cursor::new(res.clone());
+        let reader = Reader::new(b).with_guessed_format().unwrap();
+        let dimensions = reader.into_dimensions().unwrap();
+        if dimensions.0 > 2000 || dimensions.1 > 2000 {
+            return HttpResponse::NotAcceptable().await.unwrap();
+        }
+        let c = Cursor::new(res);
+        let new_reader = Reader::new(c).with_guessed_format().unwrap();
+        img = new_reader.decode().unwrap().to_rgba();
     }
     let color = body.color.as_array().unwrap();
     let classes = body.classes.as_array().unwrap();
@@ -632,13 +641,17 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
 async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
     let url = &body.url;
     let res = fetch(&url).await;
+    let b = Cursor::new(res.clone());
+    let reader = Reader::new(b).with_guessed_format().unwrap();
+    let dimensions = reader.into_dimensions().unwrap();
+    if dimensions.0 > 2000 || dimensions.1 > 2000 {
+        return HttpResponse::NotAcceptable().await.unwrap();
+    }
+    let c = Cursor::new(res);
+    let new_reader = Reader::new(c).with_guessed_format().unwrap();
+    let img = new_reader.decode().unwrap().to_rgba();
     // Lanczos3 is best, but has slow speed
-    let mut img = resize(
-        &image::load_from_memory(&res).unwrap().to_rgba(),
-        800,
-        650,
-        FilterType::Lanczos3,
-    );
+    let mut img = resize(&img, 800, 650, FilterType::Lanczos3);
     let img2 = PROFILE.clone();
     overlay(&mut img, &img2, 0, 0);
     let final_image = encode_png(&img).unwrap();
