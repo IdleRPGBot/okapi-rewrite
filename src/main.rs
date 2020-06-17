@@ -14,6 +14,7 @@ use image::{
 use imageproc::drawing::draw_text_mut;
 use imageproc::edges::canny;
 use libc::{getpid, prlimit, rlimit};
+use nix::sys::wait::waitpid;
 use nix::unistd::{close, fork, pipe, read, write, ForkResult};
 use reqwest::{header::HeaderMap, header::HeaderName, Client};
 use resvg::prelude::*;
@@ -453,7 +454,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     // Fork a new process for loading - seems best for limits
     let channels = pipe().unwrap();
     match fork() {
-        Ok(ForkResult::Parent { child: _, .. }) => {
+        Ok(ForkResult::Parent { child, .. }) => {
             close(channels.1).unwrap();
             let mut write_target: Vec<u8> = Vec::new();
             let mut read_target = [0; 1024];
@@ -465,6 +466,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
                 }
             }
             close(channels.0).unwrap();
+            waitpid(child, None).unwrap();
             HttpResponse::Ok()
                 .content_type("image/png")
                 .body(write_target)
@@ -473,34 +475,35 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
             // Child process
             close(channels.0).unwrap();
             let mut new_limit = rlimit {
-                rlim_cur: 52428800,
-                rlim_max: 52428800,
+                rlim_cur: 72428800,
+                rlim_max: 72428800,
             };
             let mut cpu_limit = rlimit {
                 rlim_cur: 2,
                 rlim_max: 2,
             };
             unsafe {
+                let pid = getpid();
                 prlimit(
-                    getpid(),
+                    pid,
                     0,
                     &cpu_limit as *const rlimit,
                     &mut cpu_limit as *mut rlimit,
                 );
                 prlimit(
-                    getpid(),
+                    pid,
                     2,
                     &new_limit as *const rlimit,
                     &mut new_limit as *mut rlimit,
                 );
                 prlimit(
-                    getpid(),
+                    pid,
                     3,
                     &new_limit as *const rlimit,
                     &mut new_limit as *mut rlimit,
                 );
                 prlimit(
-                    getpid(),
+                    pid,
                     10,
                     &new_limit as *const rlimit,
                     &mut new_limit as *mut rlimit,
@@ -720,6 +723,7 @@ async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
                 }
             }
             close(channels.0).unwrap();
+            waitpid(child, None).unwrap();
             let buf = base64::encode(&write_target);
             HttpResponse::Ok().content_type("text/plain").body(buf)
         }
@@ -727,38 +731,39 @@ async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
             // Child process
             close(channels.0).unwrap();
             let mut new_limit = rlimit {
-                rlim_cur: 52428800,
-                rlim_max: 52428800,
+                rlim_cur: 72428800,
+                rlim_max: 72428800,
             };
             let mut cpu_limit = rlimit {
                 rlim_cur: 2,
                 rlim_max: 2,
             };
             unsafe {
+                let pid = getpid();
                 prlimit(
-                    getpid(),
+                    pid,
                     0,
                     &cpu_limit as *const rlimit,
                     &mut cpu_limit as *mut rlimit,
                 );
                 prlimit(
-                    getpid(),
+                    pid,
                     2,
                     &new_limit as *const rlimit,
                     &mut new_limit as *mut rlimit,
                 );
                 prlimit(
-                    getpid(),
+                    pid,
                     3,
                     &new_limit as *const rlimit,
                     &mut new_limit as *mut rlimit,
                 );
                 prlimit(
-                    getpid(),
+                    pid,
                     10,
                     &new_limit as *const rlimit,
                     &mut new_limit as *mut rlimit,
-                )
+                );
             };
             let url = &body.url;
             println!("Generating image for {}", url);
