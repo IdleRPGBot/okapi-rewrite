@@ -13,6 +13,8 @@ env_logger = "0.7"
 reqwest = "0.10"
 image = "0.23"
 lazy_static = "1.4"
+libc = "0.2"
+nix = "0.17"
 rusttype = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
