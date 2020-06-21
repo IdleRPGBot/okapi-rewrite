@@ -5,22 +5,9 @@ WORKDIR /build
 RUN microdnf install -y g++ cmake gcc make harfbuzz-devel openssl-devel && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
-COPY Cargo.toml .
-COPY Cargo.lock .
-
-RUN source $HOME/.cargo/env && \
-    mkdir src && \
-    echo "fn main() { }" > src/main.rs && \
-    echo "fn main() { }" > src/genprofile.rs && \
-    echo "fn main() { }" > src/genoverlay.rs && \
-    cargo build --release
-
 COPY . .
 
 RUN source $HOME/.cargo/env && \
-    touch -t 200001010000 /build/target/release/okapi && \
-    touch -t 200001010000 /build/target/release/okapi-helper-genoverlay && \
-    touch -t 200001010000 /build/target/release/okapi-helper-genprofile && \
     cargo build --release && \
     strip /build/target/release/okapi && \
     strip /build/target/release/okapi-helper-genoverlay && \
