@@ -7,27 +7,25 @@ use actix_web::{get, middleware, post, web, App, HttpResponse, HttpServer};
 use base64;
 use image::{
     imageops::{invert, overlay, resize, FilterType},
-    io::Reader,
     png::PNGEncoder,
     ImageBuffer, ImageError, Pixel, Rgb, RgbImage, Rgba, RgbaImage,
 };
 use imageproc::drawing::draw_text_mut;
 use imageproc::edges::canny;
-use libc::{getpid, prlimit, rlimit};
-use nix::sys::wait::waitpid;
-use nix::unistd::{close, fork, pipe, read, write, ForkResult};
 use reqwest::{header::HeaderMap, header::HeaderName, Client};
-use resvg::prelude::*;
+use resvg_raqote::{render_to_image, Options};
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
 use std::collections::HashMap;
+use std::fmt::{self, Display};
 use std::fs::File;
-use std::io::{Cursor, Read};
+use std::io::{Read, Write};
 use std::ops::Deref;
-use std::process;
+use std::process::{Command, Stdio};
 use std::time::Duration;
 use std::{env, io, path};
+use usvg;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AdventuresJson {
@@ -44,7 +42,7 @@ struct OverlayJson {
     url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct ProfileJson {
     name: String,
     image: String,
@@ -63,6 +61,12 @@ struct ProfileJson {
     pvp_wins: String,
     adventure: String,
     icons: Value, // Array of Strings
+}
+
+impl Display for ProfileJson {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.serialize(f)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -451,363 +455,236 @@ async fn oil_endpoint(body: web::Json<ImageJson>) -> HttpResponse {
 
 #[post("/api/genprofile")]
 async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
-    // Fork a new process for loading - seems best for limits
-    let channels = pipe().unwrap();
-    match fork() {
-        Ok(ForkResult::Parent { child, .. }) => {
-            close(channels.1).unwrap();
-            let mut write_target: Vec<u8> = Vec::new();
-            let mut read_target = [0; 1024];
-            let mut bytes_read = 1;
-            while bytes_read != 0 {
-                bytes_read = read(channels.0, &mut read_target).unwrap();
-                if bytes_read != 0 {
-                    write_target.extend(read_target.iter());
-                }
-            }
-            close(channels.0).unwrap();
-            waitpid(child, None).unwrap();
-            HttpResponse::Ok()
-                .content_type("image/png")
-                .body(write_target)
+    let image_url = &body.image;
+    if image_url != "0" {
+        println!("Generating profile for url {}", image_url);
+        let res = fetch(&image_url).await;
+        let mut new_body = body.clone();
+        new_body.image = base64::encode(res);
+        let body_string = base64::encode(serde_json::to_string(&new_body).unwrap());
+        let mut cmd = Command::new("/usr/bin/okapi-helper-genprofile")
+            .stdout(Stdio::piped())
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap();
+        {
+            let stdin = cmd.stdin.as_mut().unwrap();
+            stdin.write_all(&body_string.as_bytes()).unwrap();
         }
-        Ok(ForkResult::Child) => {
-            // Child process
-            close(channels.0).unwrap();
-            let mut new_limit = rlimit {
-                rlim_cur: 72428800,
-                rlim_max: 72428800,
-            };
-            let mut cpu_limit = rlimit {
-                rlim_cur: 2,
-                rlim_max: 2,
-            };
-            unsafe {
-                let pid = getpid();
-                prlimit(
-                    pid,
-                    0,
-                    &cpu_limit as *const rlimit,
-                    &mut cpu_limit as *mut rlimit,
-                );
-                prlimit(
-                    pid,
-                    2,
-                    &new_limit as *const rlimit,
-                    &mut new_limit as *mut rlimit,
-                );
-                prlimit(
-                    pid,
-                    3,
-                    &new_limit as *const rlimit,
-                    &mut new_limit as *mut rlimit,
-                );
-                prlimit(
-                    pid,
-                    10,
-                    &new_limit as *const rlimit,
-                    &mut new_limit as *mut rlimit,
-                )
-            };
-            let image_url = &body.image;
-            // Load or download their background image
-            let mut img: RgbaImage;
-            if image_url == "0" {
-                img = DEFAULT_PROFILE.clone();
-            } else {
-                let res = fetch(&image_url).await;
-                let b = Cursor::new(res.clone());
-                let reader = Reader::new(b).with_guessed_format().unwrap();
-                let dimensions = reader.into_dimensions().unwrap();
-                if dimensions.0 > 2000 || dimensions.1 > 2000 {
-                    return HttpResponse::NotAcceptable().await.unwrap();
-                }
-                let c = Cursor::new(res);
-                let new_reader = Reader::new(c).with_guessed_format().unwrap();
-                img = new_reader.decode().unwrap().to_rgba();
-            }
-            let color = body.color.as_array().unwrap();
-            let classes = body.classes.as_array().unwrap();
-            let classes = [classes[0].as_str().unwrap(), classes[1].as_str().unwrap()];
-            let r = color[0].as_i64().unwrap() as u8;
-            let g = color[1].as_i64().unwrap() as u8;
-            let b = color[2].as_i64().unwrap() as u8;
-            let a = (color[3].as_f64().unwrap() * 255.0) as u8;
-            let color = Rgba([r, g, b, a]);
-            // Font size
-            let mut scale = Scale { x: 26.0, y: 26.0 };
-            draw_text_mut(&mut img, color, 221, 143, scale, &TRAVITIA_FONT, &body.name);
-            draw_text_mut(&mut img, color, 228, 185, scale, &TRAVITIA_FONT, &body.race);
-            scale = Scale { x: 23.0, y: 23.0 };
-            draw_text_mut(
-                &mut img,
-                color,
-                228,
-                235,
-                scale,
-                &TRAVITIA_FONT,
-                &classes[0],
-            );
-            draw_text_mut(
-                &mut img,
-                color,
-                228,
-                259,
-                scale,
-                &TRAVITIA_FONT,
-                &classes[1],
-            );
-            scale = Scale { x: 15.0, y: 22.0 };
-            draw_text_mut(
-                &mut img,
-                color,
-                111,
-                295,
-                scale,
-                &TRAVITIA_FONT,
-                &body.damage,
-            );
-            draw_text_mut(
-                &mut img,
-                color,
-                111,
-                337,
-                scale,
-                &TRAVITIA_FONT,
-                &body.defense,
-            );
-            scale = Scale { x: 22.0, y: 22.0 };
-            draw_text_mut(
-                &mut img,
-                color,
-                284,
-                295,
-                scale,
-                &TRAVITIA_FONT,
-                &body.level,
-            );
-            draw_text_mut(&mut img, color, 284, 337, scale, &TRAVITIA_FONT, "soon™");
-            if body.sword_name.len() < 18 {
-                scale = Scale { x: 35.0, y: 45.0 };
-                draw_text_mut(
-                    &mut img,
-                    color,
-                    165,
-                    495,
-                    scale,
-                    &TRAVITIA_FONT,
-                    &body.sword_name,
-                );
-            } else {
-                scale = Scale { x: 19.0, y: 19.0 };
-                let rows = wrap(&body.sword_name, 26);
-                for (i, line) in rows.iter().enumerate() {
-                    draw_text_mut(
-                        &mut img,
-                        color,
-                        165,
-                        495 + ((i as u32) * 20),
-                        scale,
-                        &TRAVITIA_FONT,
-                        &line,
-                    );
-                }
-            }
-            if body.shield_name.len() < 18 {
-                scale = Scale { x: 35.0, y: 45.0 };
-                draw_text_mut(
-                    &mut img,
-                    color,
-                    165,
-                    574,
-                    scale,
-                    &TRAVITIA_FONT,
-                    &body.shield_name,
-                );
-            } else {
-                scale = Scale { x: 19.0, y: 19.0 };
-                let rows = wrap(&body.shield_name, 26);
-                for (i, line) in rows.iter().enumerate() {
-                    draw_text_mut(
-                        &mut img,
-                        color,
-                        165,
-                        574 + ((i as u32) * 20),
-                        scale,
-                        &TRAVITIA_FONT,
-                        &line,
-                    );
-                }
-            }
-            scale = Scale { x: 52.0, y: 52.0 };
-            draw_text_mut(&mut img, color, 519, 49, scale, &TRAVITIA_FONT, &body.money);
-            draw_text_mut(&mut img, color, 519, 121, scale, &TRAVITIA_FONT, "soon™");
-            draw_text_mut(&mut img, color, 519, 204, scale, &TRAVITIA_FONT, &body.god);
-            draw_text_mut(
-                &mut img,
-                color,
-                519,
-                288,
-                scale,
-                &TRAVITIA_FONT,
-                &body.guild,
-            );
-            draw_text_mut(
-                &mut img,
-                color,
-                519,
-                379,
-                scale,
-                &TRAVITIA_FONT,
-                &body.marriage,
-            );
-            draw_text_mut(
-                &mut img,
-                color,
-                519,
-                459,
-                scale,
-                &TRAVITIA_FONT,
-                &body.pvp_wins,
-            );
-            let mut adv = body.adventure.as_str().lines();
-            let line_1 = adv.next().unwrap();
-            // Is there a second line?
-            match adv.next() {
-                Some(line_2) => {
-                    scale = Scale { x: 34.0, y: 34.0 };
-                    draw_text_mut(&mut img, color, 519, 538, scale, &TRAVITIA_FONT, line_1);
-                    draw_text_mut(&mut img, color, 519, 576, scale, &TRAVITIA_FONT, line_2);
-                }
-                None => {
-                    draw_text_mut(&mut img, color, 519, 545, scale, &TRAVITIA_FONT, line_1);
-                }
-            }
-            overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
-            let icons = body.icons.as_array().unwrap();
-            let icon_1 = icons[0].as_str().unwrap();
-            let icon_2 = icons[1].as_str().unwrap();
-            if icon_1 != "none" {
-                overlay(&mut img, &CASTS[icon_1], 205, 232);
-            }
-            if icon_2 != "none" {
-                overlay(&mut img, &CASTS[icon_2], 205, 254);
-            }
-            let final_image = encode_png(&img).unwrap();
-            write(channels.1, &final_image).unwrap();
-            close(channels.1).unwrap();
-            process::exit(0);
-        }
-        Err(_) => HttpResponse::NotAcceptable().await.unwrap(),
+        let out = String::from_utf8(cmd.wait_with_output().unwrap().stdout).unwrap();
+        let final_res = base64::decode(out).unwrap();
+        println!("Generating profile for url {}... done", image_url);
+        return HttpResponse::Ok().content_type("image/png").body(final_res);
     }
+    let mut img = DEFAULT_PROFILE.clone();
+    let color = body.color.as_array().unwrap();
+    let classes = body.classes.as_array().unwrap();
+    let classes = [classes[0].as_str().unwrap(), classes[1].as_str().unwrap()];
+    let r = color[0].as_i64().unwrap() as u8;
+    let g = color[1].as_i64().unwrap() as u8;
+    let b = color[2].as_i64().unwrap() as u8;
+    let a = (color[3].as_f64().unwrap() * 255.0) as u8;
+    let color = Rgba([r, g, b, a]);
+    // Font size
+    let mut scale = Scale { x: 26.0, y: 26.0 };
+    draw_text_mut(&mut img, color, 221, 143, scale, &TRAVITIA_FONT, &body.name);
+    draw_text_mut(&mut img, color, 228, 185, scale, &TRAVITIA_FONT, &body.race);
+    scale = Scale { x: 23.0, y: 23.0 };
+    draw_text_mut(
+        &mut img,
+        color,
+        228,
+        235,
+        scale,
+        &TRAVITIA_FONT,
+        &classes[0],
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        228,
+        259,
+        scale,
+        &TRAVITIA_FONT,
+        &classes[1],
+    );
+    scale = Scale { x: 15.0, y: 22.0 };
+    draw_text_mut(
+        &mut img,
+        color,
+        111,
+        295,
+        scale,
+        &TRAVITIA_FONT,
+        &body.damage,
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        111,
+        337,
+        scale,
+        &TRAVITIA_FONT,
+        &body.defense,
+    );
+    scale = Scale { x: 22.0, y: 22.0 };
+    draw_text_mut(
+        &mut img,
+        color,
+        284,
+        295,
+        scale,
+        &TRAVITIA_FONT,
+        &body.level,
+    );
+    draw_text_mut(&mut img, color, 284, 337, scale, &TRAVITIA_FONT, "soon™");
+    if body.sword_name.len() < 18 {
+        scale = Scale { x: 35.0, y: 45.0 };
+        draw_text_mut(
+            &mut img,
+            color,
+            165,
+            495,
+            scale,
+            &TRAVITIA_FONT,
+            &body.sword_name,
+        );
+    } else {
+        scale = Scale { x: 19.0, y: 19.0 };
+        let rows = wrap(&body.sword_name, 26);
+        for (i, line) in rows.iter().enumerate() {
+            draw_text_mut(
+                &mut img,
+                color,
+                165,
+                495 + ((i as u32) * 20),
+                scale,
+                &TRAVITIA_FONT,
+                &line,
+            );
+        }
+    }
+    if body.shield_name.len() < 18 {
+        scale = Scale { x: 35.0, y: 45.0 };
+        draw_text_mut(
+            &mut img,
+            color,
+            165,
+            574,
+            scale,
+            &TRAVITIA_FONT,
+            &body.shield_name,
+        );
+    } else {
+        scale = Scale { x: 19.0, y: 19.0 };
+        let rows = wrap(&body.shield_name, 26);
+        for (i, line) in rows.iter().enumerate() {
+            draw_text_mut(
+                &mut img,
+                color,
+                165,
+                574 + ((i as u32) * 20),
+                scale,
+                &TRAVITIA_FONT,
+                &line,
+            );
+        }
+    }
+    scale = Scale { x: 52.0, y: 52.0 };
+    draw_text_mut(&mut img, color, 519, 49, scale, &TRAVITIA_FONT, &body.money);
+    draw_text_mut(&mut img, color, 519, 121, scale, &TRAVITIA_FONT, "soon™");
+    draw_text_mut(&mut img, color, 519, 204, scale, &TRAVITIA_FONT, &body.god);
+    draw_text_mut(
+        &mut img,
+        color,
+        519,
+        288,
+        scale,
+        &TRAVITIA_FONT,
+        &body.guild,
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        519,
+        379,
+        scale,
+        &TRAVITIA_FONT,
+        &body.marriage,
+    );
+    draw_text_mut(
+        &mut img,
+        color,
+        519,
+        459,
+        scale,
+        &TRAVITIA_FONT,
+        &body.pvp_wins,
+    );
+    let mut adv = body.adventure.as_str().lines();
+    let line_1 = adv.next().unwrap();
+    // Is there a second line?
+    match adv.next() {
+        Some(line_2) => {
+            scale = Scale { x: 34.0, y: 34.0 };
+            draw_text_mut(&mut img, color, 519, 538, scale, &TRAVITIA_FONT, line_1);
+            draw_text_mut(&mut img, color, 519, 576, scale, &TRAVITIA_FONT, line_2);
+        }
+        None => {
+            draw_text_mut(&mut img, color, 519, 545, scale, &TRAVITIA_FONT, line_1);
+        }
+    }
+    overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
+    let icons = body.icons.as_array().unwrap();
+    let icon_1 = icons[0].as_str().unwrap();
+    let icon_2 = icons[1].as_str().unwrap();
+    if icon_1 != "none" {
+        overlay(&mut img, &CASTS[icon_1], 205, 232);
+    }
+    if icon_2 != "none" {
+        overlay(&mut img, &CASTS[icon_2], 205, 254);
+    }
+    let final_image = encode_png(&img).unwrap();
+    HttpResponse::Ok()
+        .content_type("image/png")
+        .body(final_image)
 }
 
 #[post("/api/genoverlay")]
 async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
-    // Fork a new process for loading - seems best for limits
-    let channels = pipe().unwrap();
-    match fork() {
-        Ok(ForkResult::Parent { child, .. }) => {
-            println!(
-                "Continuing execution in parent process, new child has pid: {}",
-                child
-            );
-            close(channels.1).unwrap();
-            let mut write_target: Vec<u8> = Vec::new();
-            let mut read_target = [0; 1024];
-            let mut bytes_read = 1;
-            while bytes_read != 0 {
-                bytes_read = read(channels.0, &mut read_target).unwrap();
-                if bytes_read != 0 {
-                    write_target.extend(read_target.iter());
-                }
-            }
-            close(channels.0).unwrap();
-            waitpid(child, None).unwrap();
-            let buf = base64::encode(&write_target);
-            HttpResponse::Ok().content_type("text/plain").body(buf)
-        }
-        Ok(ForkResult::Child) => {
-            // Child process
-            close(channels.0).unwrap();
-            let mut new_limit = rlimit {
-                rlim_cur: 72428800,
-                rlim_max: 72428800,
-            };
-            let mut cpu_limit = rlimit {
-                rlim_cur: 2,
-                rlim_max: 2,
-            };
-            unsafe {
-                let pid = getpid();
-                prlimit(
-                    pid,
-                    0,
-                    &cpu_limit as *const rlimit,
-                    &mut cpu_limit as *mut rlimit,
-                );
-                prlimit(
-                    pid,
-                    2,
-                    &new_limit as *const rlimit,
-                    &mut new_limit as *mut rlimit,
-                );
-                prlimit(
-                    pid,
-                    3,
-                    &new_limit as *const rlimit,
-                    &mut new_limit as *mut rlimit,
-                );
-                prlimit(
-                    pid,
-                    10,
-                    &new_limit as *const rlimit,
-                    &mut new_limit as *mut rlimit,
-                );
-            };
-            let url = &body.url;
-            println!("Generating image for {}", url);
-            let res = fetch(&url).await;
-            let b = Cursor::new(res.clone());
-            let reader = Reader::new(b).with_guessed_format().unwrap();
-            let dimensions = reader.into_dimensions().unwrap();
-            if dimensions.0 > 2000 || dimensions.1 > 2000 {
-                close(channels.1).unwrap();
-                println!("{} is most likely a bomb", url);
-                process::exit(1);
-            }
-            let c = Cursor::new(res);
-            let new_reader = Reader::new(c).with_guessed_format().unwrap();
-            let img = new_reader.decode().unwrap().to_rgba();
-            // Lanczos3 is best, but has slow speed
-            let mut img = resize(&img, 800, 650, FilterType::Lanczos3);
-            let img2 = PROFILE.clone();
-            overlay(&mut img, &img2, 0, 0);
-            let final_image = encode_png(&img).unwrap();
-            write(channels.1, &final_image).unwrap();
-            close(channels.1).unwrap();
-            println!("Generating image for {} finished", url);
-            process::exit(0);
-        }
-        Err(_) => HttpResponse::NotAcceptable().await.unwrap(),
+    let url = &body.url;
+    println!("Generating image for url {}", url);
+    let res = fetch(&url).await;
+    let mut cmd = Command::new("/usr/bin/okapi-helper-genoverlay")
+        .stdout(Stdio::piped())
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let stdin = cmd.stdin.as_mut().unwrap();
+        stdin.write_all(&res).unwrap();
     }
+    let out = cmd.wait_with_output().unwrap().stdout;
+    let buf = String::from_utf8(out).unwrap();
+    println!("Generating image for url {}... done", url);
+    HttpResponse::Ok().content_type("text/plain").body(buf)
 }
 
 #[post("/api/genchess")]
 async fn genchess(body: web::Json<ChessJson>) -> HttpResponse {
     let xml = &body.xml;
-    let opts = resvg::Options {
+    let opts = Options {
         background: None,
-        fit_to: resvg::FitTo::Width(390),
-        usvg: resvg::Options::default().usvg,
+        fit_to: usvg::FitTo::Width(390),
+        usvg: Options::default().usvg,
     };
     let tree = usvg::Tree::from_str(&xml, &opts.usvg).unwrap();
-    let mut img = resvg::backend_raqote::render_to_image(&tree, &opts).unwrap();
-    let vect = img.make_vec();
-    let final_image = encode_png(
-        &image::RgbaImage::from_vec(img.height() as u32, img.width() as u32, vect).unwrap(),
-    )
-    .unwrap();
+    let img = render_to_image(&tree, &opts).unwrap();
+    let vect = img.get_data_u8().to_vec();
+    type BgraImage = image::ImageBuffer<image::Bgra<u8>, Vec<u8>>;
+    let img2 = BgraImage::from_vec(img.height() as u32, img.width() as u32, vect).unwrap();
+    let dynm = image::DynamicImage::ImageBgra8(img2);
+    let final_image = encode_png(&dynm.into_rgba()).unwrap();
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
