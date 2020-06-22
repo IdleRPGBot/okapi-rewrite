@@ -249,7 +249,7 @@ lazy_static! {
         base.push("adventures");
         let base = base.into_os_string();
         let mut images = Vec::new();
-        for i in 1..30 {
+        for i in 1..=30 {
             let mut path = path::PathBuf::from(base.clone());
             path.push(format!("{}.png", i));
             images.push(load_image_rgb(path));
