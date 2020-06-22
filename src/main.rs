@@ -17,6 +17,7 @@ use resvg_raqote::{render_to_image, Options};
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs::File;
@@ -25,6 +26,7 @@ use std::ops::Deref;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use std::{env, io, path};
+use textwrap;
 use usvg;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -94,36 +96,8 @@ fn load_image_rgba(path: path::PathBuf) -> RgbaImage {
     image::open(path).unwrap().to_rgba()
 }
 
-fn wrap(thing: &str, n: usize) -> Vec<&str> {
-    let mut slices: Vec<&str> = Vec::new();
-    let mut thing = thing.clone();
-
-    // while string is not empty
-    // take n characters
-    // check witch one was the last space or if the end of the line is reached
-    // then => push them in slices
-    // then => remove them from the string
-
-    while thing != "" {
-        let mut last_space = 0;
-
-        for i in 0..thing.len() {
-            if i == n {
-                break;
-            }
-            if thing.chars().nth(i).unwrap() == ' ' {
-                last_space = i;
-            }
-            if i == thing.len() - 1 {
-                last_space = thing.len();
-            }
-        }
-
-        // insert into array
-        slices.push(thing[0..last_space].trim());
-        thing = &thing[last_space..];
-    }
-    slices
+fn wrap(thing: &str, n: usize) -> Vec<Cow<str>> {
+    textwrap::wrap(thing, n)
 }
 
 lazy_static! {

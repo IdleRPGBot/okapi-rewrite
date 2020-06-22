@@ -14,6 +14,7 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::ops::Deref;
 use std::process::exit;
+use textwrap;
 
 fn encode_png<P, Container>(img: &ImageBuffer<P, Container>) -> Result<Vec<u8>, ImageError>
 where
@@ -24,38 +25,6 @@ where
     let encoder = PNGEncoder::new(&mut buf);
     encoder.encode(img, img.width(), img.height(), P::COLOR_TYPE)?;
     Ok(buf)
-}
-
-fn wrap(thing: &str, n: usize) -> Vec<&str> {
-    let mut slices: Vec<&str> = Vec::new();
-    let mut thing = thing.clone();
-
-    // while string is not empty
-    // take n characters
-    // check witch one was the last space or if the end of the line is reached
-    // then => push them in slices
-    // then => remove them from the string
-
-    while thing != "" {
-        let mut last_space = 0;
-
-        for i in 0..thing.len() {
-            if i == n {
-                break;
-            }
-            if thing.chars().nth(i).unwrap() == ' ' {
-                last_space = i;
-            }
-            if i == thing.len() - 1 {
-                last_space = thing.len();
-            }
-        }
-
-        // insert into array
-        slices.push(thing[0..last_space].trim());
-        thing = &thing[last_space..];
-    }
-    slices
 }
 
 fn main() {
@@ -185,8 +154,7 @@ fn main() {
         );
     } else {
         scale = Scale { x: 19.0, y: 19.0 };
-        let rows = wrap(&sword_name, 26);
-        for (i, line) in rows.iter().enumerate() {
+        for (i, line) in textwrap::wrap_iter(&sword_name, 26).enumerate() {
             draw_text_mut(
                 &mut img,
                 color,
@@ -212,8 +180,7 @@ fn main() {
         );
     } else {
         scale = Scale { x: 19.0, y: 19.0 };
-        let rows = wrap(&shield_name, 26);
-        for (i, line) in rows.iter().enumerate() {
+        for (i, line) in textwrap::wrap_iter(&sword_name, 26).enumerate() {
             draw_text_mut(
                 &mut img,
                 color,
