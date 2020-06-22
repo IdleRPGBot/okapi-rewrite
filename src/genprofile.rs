@@ -180,7 +180,7 @@ fn main() {
         );
     } else {
         scale = Scale { x: 19.0, y: 19.0 };
-        for (i, line) in textwrap::wrap_iter(&sword_name, 26).enumerate() {
+        for (i, line) in textwrap::wrap_iter(&shield_name, 26).enumerate() {
             draw_text_mut(
                 &mut img,
                 color,
