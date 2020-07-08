@@ -669,7 +669,7 @@ async fn genadventures(body: web::Json<AdventuresJson>) -> HttpResponse {
     // body is the parsed JSON
     let chances = body.percentages.as_array().unwrap();
     let mut images = Vec::new();
-    for idx in 0..29 {
+    for idx in 0..30 {
         let current_chances = &chances[idx].as_array().unwrap();
         let chance_min = &current_chances[0];
         let chance_max = &current_chances[1];
