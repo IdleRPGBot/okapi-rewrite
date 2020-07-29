@@ -13,7 +13,7 @@ use image::{
 use imageproc::drawing::draw_text_mut;
 use imageproc::edges::canny;
 use reqwest::{header::HeaderMap, header::HeaderName, Client};
-use resvg_raqote::{render_to_image, Options};
+use resvg::render;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, Value};
@@ -647,18 +647,13 @@ async fn genoverlay(body: web::Json<OverlayJson>) -> HttpResponse {
 #[post("/api/genchess")]
 async fn genchess(body: web::Json<ChessJson>) -> HttpResponse {
     let xml = &body.xml;
-    let opts = Options {
-        background: None,
-        fit_to: usvg::FitTo::Width(390),
-        usvg: Options::default().usvg,
-    };
-    let tree = usvg::Tree::from_str(&xml, &opts.usvg).unwrap();
-    let img = render_to_image(&tree, &opts).unwrap();
-    let vect = img.get_data_u8().to_vec();
-    type BgraImage = image::ImageBuffer<image::Bgra<u8>, Vec<u8>>;
-    let img2 = BgraImage::from_vec(img.height() as u32, img.width() as u32, vect).unwrap();
-    let dynm = image::DynamicImage::ImageBgra8(img2);
-    let final_image = encode_png(&dynm.into_rgba()).unwrap();
+    let tree = usvg::Tree::from_str(&xml, &usvg::Options::default()).unwrap();
+    let img = render(&tree, usvg::FitTo::Width(390), None).unwrap();
+    let width = img.width() as u32;
+    let height = img.height() as u32;
+    let vect = img.take();
+    let final_image =
+        encode_png(&image::RgbaImage::from_vec(width, height, vect).unwrap()).unwrap();
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
