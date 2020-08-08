@@ -2,30 +2,18 @@ use base64::encode;
 use image::{
     imageops::{overlay, resize, FilterType},
     io::Reader,
-    png::PNGEncoder,
-    ImageBuffer, ImageError, Pixel, Rgba,
+    Rgba,
 };
 use imageproc::drawing::draw_text_mut;
 use nix::sys::resource::{setrlimit, Resource};
+use okapi_rewrite::encoder::encode_png;
 use rusttype::{Font, Scale};
 use serde_json;
 use std::env;
 use std::fs::File;
 use std::io::{self, Read};
-use std::ops::Deref;
 use std::process::exit;
 use textwrap;
-
-fn encode_png<P, Container>(img: &ImageBuffer<P, Container>) -> Result<Vec<u8>, ImageError>
-where
-    P: Pixel<Subpixel = u8> + 'static,
-    Container: Deref<Target = [P::Subpixel]>,
-{
-    let mut buf = Vec::new();
-    let encoder = PNGEncoder::new(&mut buf);
-    encoder.encode(img, img.width(), img.height(), P::COLOR_TYPE)?;
-    Ok(buf)
-}
 
 fn main() {
     let soft_mem_limit = Some(52428800);

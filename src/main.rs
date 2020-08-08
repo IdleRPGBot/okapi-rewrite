@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
 extern crate actix_web;
 extern crate image;
 
@@ -8,24 +6,24 @@ use base64;
 use image::{
     imageops::{invert, overlay, resize, FilterType},
     png::PNGEncoder,
-    ImageBuffer, ImageError, Pixel, Rgb, RgbImage, Rgba, RgbaImage,
+    ImageBuffer, ImageError, Pixel, Rgb, Rgba,
 };
 use imageproc::drawing::draw_text_mut;
 use imageproc::edges::canny;
-use reqwest::{header::HeaderMap, header::HeaderName, Client};
+use okapi_rewrite::constants::*;
+use reqwest::header::HeaderName;
 use resvg::render;
-use rusttype::{Font, Scale};
+use rusttype::Scale;
 use serde::{Deserialize, Serialize};
-use serde_json::{from_str, Value};
+use serde_json::Value;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::{self, Display};
-use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::ops::Deref;
 use std::process::{Command, Stdio};
 use std::time::Duration;
-use std::{env, io, path};
+use std::{env, io};
 use textwrap;
 use usvg;
 
@@ -76,197 +74,8 @@ struct ImageJson {
     image: String, // URL
 }
 
-fn load_font(name: &str) -> Font {
-    let mut path = env::current_dir().unwrap();
-    path.push("assets");
-    path.push("fonts");
-    path.push(name);
-    let mut f = File::open(path).unwrap();
-    let mut buf = Vec::new();
-    f.read_to_end(&mut buf).unwrap();
-    let font = Font::try_from_vec(buf).unwrap();
-    font
-}
-
-fn load_image_rgb(path: path::PathBuf) -> RgbImage {
-    image::open(path).unwrap().to_rgb()
-}
-
-fn load_image_rgba(path: path::PathBuf) -> RgbaImage {
-    image::open(path).unwrap().to_rgba()
-}
-
 fn wrap(thing: &str, n: usize) -> Vec<Cow<str>> {
     textwrap::wrap(thing, n)
-}
-
-lazy_static! {
-    static ref CONFIG: Value = {
-        let mut file = File::open("config.json").expect("Config not found");
-        let mut data = String::new();
-        file.read_to_string(&mut data).unwrap();
-        let json = from_str(&data).expect("Invalid JSON");
-        json
-    };
-    static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf");
-    static ref CAVIAR_DREAMS: Font<'static> = load_font("CaviarDreams.ttf");
-    static ref OPEN_SANS_EMOJI: Font<'static> = load_font("OpenSansEmoji.ttf");
-    static ref K_GOTHIC: Font<'static> = load_font("K Gothic.ttf");
-    static ref PROFILE: RgbaImage = {
-        let mut base = env::current_dir().unwrap();
-        base.push("assets");
-        base.push("images");
-        base.push("ProfileOverlayNew.png");
-        load_image_rgba(base)
-    };
-    static ref DEFAULT_PROFILE: RgbaImage = load_image_rgba(
-        env::current_dir()
-            .unwrap()
-            .join("assets")
-            .join("images")
-            .join("ProfileNew.png")
-    );
-    static ref CASTS: HashMap<String, RgbaImage> = {
-        let mut base = env::current_dir().unwrap();
-        base.push("assets");
-        base.push("images");
-        base.push("casts");
-        let mut map: HashMap<String, RgbaImage> = HashMap::new();
-        map.insert(
-            "thief".to_string(),
-            resize(
-                &load_image_rgba(base.join("thief.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "paragon".to_string(),
-            resize(
-                &load_image_rgba(base.join("paragon.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "ranger".to_string(),
-            resize(
-                &load_image_rgba(base.join("ranger.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "warrior".to_string(),
-            resize(
-                &load_image_rgba(base.join("warrior.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "mage".to_string(),
-            resize(
-                &load_image_rgba(base.join("mage.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "raider".to_string(),
-            resize(
-                &load_image_rgba(base.join("raider.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "ritualist".to_string(),
-            resize(
-                &load_image_rgba(base.join("ritualist.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "human".to_string(),
-            resize(
-                &load_image_rgba(base.join("human.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "elf".to_string(),
-            resize(
-                &load_image_rgba(base.join("elf.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "jikill".to_string(),
-            resize(
-                &load_image_rgba(base.join("jikill.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "dwarf".to_string(),
-            resize(
-                &load_image_rgba(base.join("dwarf.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map.insert(
-            "orc".to_string(),
-            resize(
-                &load_image_rgba(base.join("orc.png")),
-                22,
-                22,
-                FilterType::Lanczos3,
-            ),
-        );
-        map
-    };
-    static ref ADVENTURES: Vec<RgbImage> = {
-        let mut base = env::current_dir().unwrap();
-        base.push("assets");
-        base.push("images");
-        base.push("adventures");
-        let base = base.into_os_string();
-        let mut images = Vec::new();
-        for i in 1..=30 {
-            let mut path = path::PathBuf::from(base.clone());
-            path.push(format!("{}.png", i));
-            images.push(load_image_rgb(path));
-        }
-        images
-    };
-    static ref CLIENT: Client = Client::new();
-    static ref HEADERS: HeaderMap = {
-        let mut headers = HeaderMap::new();
-        let key = CONFIG["proxy_auth"].as_str().unwrap().parse().unwrap();
-        let proxy_authorization_key =
-            HeaderName::from_lowercase(b"proxy-authorization-key").unwrap();
-        let accept = HeaderName::from_lowercase(b"accept").unwrap();
-        headers.insert(proxy_authorization_key, key);
-        headers.insert(accept, "application/json".parse().unwrap());
-        headers
-    };
 }
 
 async fn fetch(url: &str) -> actix_web::web::Bytes {
