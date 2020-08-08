@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora-minimal:32 AS builder
 
 WORKDIR /build
 
-RUN microdnf install -y g++ cmake gcc clang make harfbuzz-devel openssl-devel && \
+RUN microdnf install -y cmake clang make harfbuzz-devel openssl-devel && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
 COPY . .
