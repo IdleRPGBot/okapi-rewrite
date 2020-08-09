@@ -12,13 +12,9 @@ struct ChessJson {
 
 #[post("/api/genchess")]
 async fn genchess(body: Json<ChessJson>) -> HttpResponse {
-    println!("1");
     let xml = &body.xml;
-    println!("{}", xml);
     let tree = Tree::from_str(&xml, &usvg::Options::default()).unwrap();
-    println!("2");
     let img = render(&tree, usvg::FitTo::Width(390), None).unwrap();
-    println!("3");
     let width = img.width() as u32;
     let height = img.height() as u32;
     let vect = img.take();

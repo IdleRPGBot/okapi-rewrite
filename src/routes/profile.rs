@@ -2,13 +2,14 @@ use crate::constants::*;
 use crate::encoder::encode_png;
 use crate::proxy::fetch;
 use actix_web::{post, web, HttpResponse};
-use image::load_from_memory;
+use image::io::Reader;
 use image::{imageops::overlay, Rgba};
 use imageproc::drawing::draw_text_mut;
 use rusttype::Scale;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::io::Cursor;
 use textwrap::wrap;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,9 +44,25 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     let image_url = &body.image;
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
-        _ => load_from_memory(&fetch(&image_url).await)
-            .unwrap()
-            .to_rgba(),
+        _ => {
+            println!("Generating image for url {}", url);
+            let buf = fetch(&image_url).await;
+            let b = Cursor::new(buf.clone());
+            let reader = Reader::new(b).with_guessed_format().unwrap();
+            let dimensions = reader.into_dimensions().unwrap();
+            if dimensions.0 > 2000 || dimensions.1 > 2000 {
+                // TODO: Better error handling?
+                return HttpResponse::Ok().content_type("image/png").body("");
+            }
+            let c = Cursor::new(buf);
+            Reader::new(c)
+                .with_guessed_format()
+                .unwrap()
+                .decode()
+                .unwrap()
+                .to_rgba()
+                println!("Generating image for url {}... done", url);
+        }
     };
     let color = body.color.as_array().unwrap();
     let classes = body.classes.as_array().unwrap();
