@@ -1,28 +1,24 @@
-FROM registry.fedoraproject.org/fedora-minimal:32 AS builder
+FROM docker.io/library/alpine:edge AS builder
+
+ENV CXX="g++"
+ENV CC="gcc"
 
 WORKDIR /build
 
-RUN microdnf install -y cmake clang make harfbuzz-devel openssl-devel && \
+RUN apk add --no-cache make cmake harfbuzz-dev openssl-dev curl gcc g++ musl-dev && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
 COPY . .
 
 RUN source $HOME/.cargo/env && \
     cargo build --release && \
-    strip /build/target/release/okapi && \
-    strip /build/target/release/okapi-helper-genoverlay && \
-    strip /build/target/release/okapi-helper-genprofile
+    strip /build/target/release/okapi
 
-FROM registry.fedoraproject.org/fedora-minimal:32
+FROM docker.io/library/alpine:edge
 
 WORKDIR /okapi
 
-RUN microdnf install -y libstdc++ harfbuzz-devel && \
-    microdnf clean all
-
 COPY --from=builder /build/target/release/okapi /usr/bin/
-COPY --from=builder /build/target/release/okapi-helper-genoverlay /usr/bin/
-COPY --from=builder /build/target/release/okapi-helper-genprofile /usr/bin/
 COPY assets /okapi/assets
 
 CMD /usr/bin/okapi
