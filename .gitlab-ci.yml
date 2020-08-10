@@ -1,0 +1,21 @@
+image: "quay.io/podman/upstream"
+
+before_script:
+  - podman --version
+  - curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
+  - dnf install -y git-core
+
+stages:
+  - Static analysis
+  - Test compile
+
+rustfmt:
+  stage: Static Analysis
+  script:
+    - cargo fmt
+    - bash -c '[ -z "$(git status --porcelain)" ] || exit 1'
+
+test-compile:
+  stage: Test compile
+  script:
+    - podman build --storage-driver vfs -t okapi:latest .
