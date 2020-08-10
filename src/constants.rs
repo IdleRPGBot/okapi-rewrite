@@ -7,20 +7,14 @@ use reqwest::{
     Client,
 };
 use rusttype::Font;
-use serde_json::{from_str, value::Value};
 use std::collections::HashMap;
-use std::env::current_dir;
-use std::fs::File;
-use std::io::Read;
+use std::env::{current_dir, var};
 use std::path::PathBuf;
 
 lazy_static! {
-    pub static ref CONFIG: Value = {
-        let mut file = File::open("config.json").expect("Config not found");
-        let mut data = String::new();
-        file.read_to_string(&mut data).unwrap();
-        let json = from_str(&data).expect("Invalid JSON");
-        json
+    pub static ref PROXY_URL: Option<String> = match var("PROXY_URL") {
+        Ok(url) => Some(url),
+        Err(_) => None,
     };
     pub static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf");
     pub static ref CAVIAR_DREAMS: Font<'static> = load_font("CaviarDreams.ttf");
@@ -90,11 +84,15 @@ lazy_static! {
     pub static ref CLIENT: Client = Client::new();
     pub static ref HEADERS: HeaderMap = {
         let mut headers = HeaderMap::new();
-        let key = CONFIG["proxy_auth"].as_str().unwrap().parse().unwrap();
-        let proxy_authorization_key =
-            HeaderName::from_lowercase(b"proxy-authorization-key").unwrap();
+        match var("PROXY_AUTH") {
+            Ok(key) => {
+                let proxy_authorization_key =
+                    HeaderName::from_lowercase(b"proxy-authorization-key").unwrap();
+                headers.insert(proxy_authorization_key, key.parse().unwrap());
+            }
+            Err(_) => {}
+        };
         let accept = HeaderName::from_lowercase(b"accept").unwrap();
-        headers.insert(proxy_authorization_key, key);
         headers.insert(accept, "application/json".parse().unwrap());
         headers
     };

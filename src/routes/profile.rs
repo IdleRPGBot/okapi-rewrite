@@ -45,7 +45,6 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
         _ => {
-            println!("Generating image for url {}", url);
             let buf = fetch(&image_url).await;
             let b = Cursor::new(buf.clone());
             let reader = Reader::new(b).with_guessed_format().unwrap();
@@ -61,7 +60,6 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
                 .decode()
                 .unwrap()
                 .to_rgba()
-                println!("Generating image for url {}... done", url);
         }
     };
     let color = body.color.as_array().unwrap();

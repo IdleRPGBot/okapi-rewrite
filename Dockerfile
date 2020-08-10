@@ -2,12 +2,21 @@ FROM registry.fedoraproject.org/fedora-minimal:32 AS builder
 
 WORKDIR /build
 
-RUN microdnf install -y cmake clang make openssl-devel && \
+RUN microdnf install -y cmake clang make openssl-devel findutils && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
-COPY . .
+COPY Cargo.toml Cargo.lock ./
 
 RUN source $HOME/.cargo/env && \
+    mkdir -p src/ && \
+    echo "fn main() {println!(\"broken\")}" > src/main.rs && \
+    cargo build --release
+
+COPY src src/
+
+RUN set -ex && \
+    source $HOME/.cargo/env && \
+    find target/release -type f -name "okapi" -exec touch -t 200001010000 {} + && \
     cargo build --release && \
     strip /build/target/release/okapi
 
