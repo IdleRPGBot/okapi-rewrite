@@ -23,10 +23,30 @@ struct Intensity {
 
 #[post("/api/imageops/pixel")]
 async fn pixelate(body: Json<ImageJson>) -> HttpResponse {
-    let res = fetch(&body.image).await;
-    let img = load_from_memory(&res).unwrap().to_rgba();
+    let res = match fetch(&body.image).await {
+        Ok(buf) => buf,
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
+                    e
+                ))
+        }
+    };
+    let img = match load_from_memory(&res) {
+        Ok(data) => data.to_rgba(),
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                e
+            ))
+        }
+    };
     let buf = resize(&img, 1024, 1024, FilterType::Nearest);
-    let final_image = encode_png(&buf).unwrap();
+    let final_image = encode_png(&buf).expect("encoding PNG failed");
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
@@ -34,10 +54,30 @@ async fn pixelate(body: Json<ImageJson>) -> HttpResponse {
 
 #[post("/api/imageops/invert")]
 async fn invert_endpoint(body: Json<ImageJson>) -> HttpResponse {
-    let res = fetch(&body.image).await;
-    let mut img = image::load_from_memory(&res).unwrap().to_rgba();
+    let res = match fetch(&body.image).await {
+        Ok(buf) => buf,
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
+                    e
+                ))
+        }
+    };
+    let mut img = match load_from_memory(&res) {
+        Ok(data) => data.to_rgba(),
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                e
+            ))
+        }
+    };
     invert(&mut img);
-    let final_image = encode_png(&img).unwrap();
+    let final_image = encode_png(&img).expect("encoding PNG failed");
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
@@ -45,10 +85,30 @@ async fn invert_endpoint(body: Json<ImageJson>) -> HttpResponse {
 
 #[post("/api/imageops/edges")]
 async fn edges_endpoint(body: Json<ImageJson>) -> HttpResponse {
-    let res = fetch(&body.image).await;
-    let img = image::load_from_memory(&res).unwrap().to_luma();
+    let res = match fetch(&body.image).await {
+        Ok(buf) => buf,
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
+                    e
+                ))
+        }
+    };
+    let img = match load_from_memory(&res) {
+        Ok(data) => data.to_luma(),
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                e
+            ))
+        }
+    };
     let buf = canny(&img, 25.0, 80.0);
-    let final_image = encode_png(&buf).unwrap();
+    let final_image = encode_png(&buf).expect("encoding PNG failed");
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)
@@ -56,9 +116,29 @@ async fn edges_endpoint(body: Json<ImageJson>) -> HttpResponse {
 
 #[post("/api/imageops/oil")]
 async fn oil_endpoint(body: Json<ImageJson>) -> HttpResponse {
-    let res = fetch(&body.image).await;
-    let img = image::load_from_memory(&res).unwrap().to_rgba();
-    let radius = 4 as i32;
+    let res = match fetch(&body.image).await {
+        Ok(buf) => buf,
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
+                    e
+                ))
+        }
+    };
+    let img = match load_from_memory(&res) {
+        Ok(data) => data.to_rgba(),
+        Err(e) => {
+            return HttpResponse::UnprocessableEntity()
+                .content_type("application/json")
+                .body(format!(
+                "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                e
+            ))
+        }
+    };
+    let radius = 4i32;
     let intensity = 55.0;
     let width = img.width();
     let height = img.height();
@@ -130,7 +210,7 @@ async fn oil_endpoint(body: Json<ImageJson>) -> HttpResponse {
             )
         }
     }
-    let final_image = encode_png(&target).unwrap();
+    let final_image = encode_png(&target).expect("encoding PNG failed");
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)

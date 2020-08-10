@@ -41,9 +41,8 @@ async fn genadventures(body: Json<AdventuresJson>) -> HttpResponse {
             &TRAVITIA_FONT,
             &format!("{}%", chance_max),
         );
-        let final_image = encode_png(&new_image).unwrap();
-        let buf = format!("data:image/png;base64,{}", encode(&final_image));
-        images.push(buf);
+        let buf = encode_png(&new_image).expect("encoding PNG failed");
+        images.push(format!("data:image/png;base64,{}", encode(&buf)))
     }
     HttpResponse::Ok().json(images)
 }

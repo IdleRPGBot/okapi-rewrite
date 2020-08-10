@@ -38,14 +38,46 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
         _ => {
-            let buf = fetch(&image_url).await;
+            let buf = match fetch(&image_url).await {
+                Ok(buf) => buf,
+                Err(e) => {
+                    return HttpResponse::UnprocessableEntity()
+                        .content_type("application/json")
+                        .body(format!(
+                            "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
+                            e
+                        ))
+                }
+            };
             let b = Cursor::new(buf.clone());
-            let reader = Reader::new(b).with_guessed_format().unwrap();
-            let dimensions = reader.into_dimensions().unwrap();
+            let reader = match Reader::new(b).with_guessed_format() {
+                Ok(r) => r,
+                Err(e) => {
+                    return HttpResponse::UnprocessableEntity()
+                        .content_type("application/json")
+                        .body(format!(
+                        "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                        e
+                    ))
+                }
+            };
+            let dimensions = match reader.into_dimensions() {
+                Ok(d) => d,
+                Err(e) => {
+                    return HttpResponse::UnprocessableEntity()
+                        .content_type("application/json")
+                        .body(format!(
+                            "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                            e
+                        ))
+                }
+            };
             if dimensions.0 > 2000 || dimensions.1 > 2000 {
-                // TODO: Better error handling?
-                return HttpResponse::Ok().content_type("image/png").body("");
+                return HttpResponse::UnprocessableEntity()
+                    .content_type("application/json")
+                    .body("{\"status\": \"error\", \"reason\": \"image too large\", \"detail\": \"the image file exceeds the size of 2000 pixels in at least one axis\"}");
             }
+            // We can also happily unwrap here because it is the same data
             let c = Cursor::new(buf);
             Reader::new(c)
                 .with_guessed_format()
@@ -55,10 +87,11 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
                 .to_rgba()
         }
     };
-    let r = body.color[0].as_u64().unwrap() as u8;
-    let g = body.color[1].as_u64().unwrap() as u8;
-    let b = body.color[2].as_u64().unwrap() as u8;
-    let a = (body.color[3].as_f64().unwrap() * 255.0) as u8;
+    // I think unwrapping here is legitimate
+    let r = body.color[0].as_u64().expect("R value should be u64") as u8;
+    let g = body.color[1].as_u64().expect("G value should be u64") as u8;
+    let b = body.color[2].as_u64().expect("B value should be u64") as u8;
+    let a = (body.color[3].as_f64().expect("A value should be f64") * 255.0) as u8;
     let color = Rgba([r, g, b, a]);
     // Font size
     let mut scale = Scale { x: 26.0, y: 26.0 };
@@ -218,7 +251,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     if icon_2 != "none" {
         overlay(&mut img, &CASTS[icon_2], 205, 254);
     }
-    let final_image = encode_png(&img).unwrap();
+    let final_image = encode_png(&img).expect("encoding PNG failed");
     HttpResponse::Ok()
         .content_type("image/png")
         .body(final_image)

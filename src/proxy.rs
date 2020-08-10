@@ -1,9 +1,9 @@
 use crate::constants::{CLIENT, HEADERS, PROXY_URL};
 use actix_web::web::Bytes;
-use reqwest::header::HeaderName;
+use reqwest::{header::HeaderName, Error};
 use std::time::Duration;
 
-pub async fn fetch(url: &str) -> Bytes {
+pub async fn fetch(url: &str) -> Result<Bytes, Error> {
     let mut headers = HEADERS.clone();
     let url_to_call: String = match &*PROXY_URL {
         Some(url) => {
@@ -18,10 +18,8 @@ pub async fn fetch(url: &str) -> Bytes {
         .headers(headers)
         .timeout(Duration::new(3, 0))
         .send()
-        .await
-        .unwrap()
+        .await?
         .bytes()
-        .await
-        .unwrap();
-    resp
+        .await?;
+    Ok(resp)
 }

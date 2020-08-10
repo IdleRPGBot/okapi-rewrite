@@ -16,16 +16,24 @@ lazy_static! {
         Ok(url) => Some(url),
         Err(_) => None,
     };
-    pub static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf");
-    pub static ref CAVIAR_DREAMS: Font<'static> = load_font("CaviarDreams.ttf");
-    pub static ref OPEN_SANS_EMOJI: Font<'static> = load_font("OpenSansEmoji.ttf");
-    pub static ref K_GOTHIC: Font<'static> = load_font("K Gothic.ttf");
+    pub static ref TRAVITIA_FONT: Font<'static> = load_font("TravMedium.otf")
+        .expect("could not load font")
+        .expect("font corrupt");
+    pub static ref CAVIAR_DREAMS: Font<'static> = load_font("CaviarDreams.ttf")
+        .expect("could not load font")
+        .expect("font corrupt");
+    pub static ref OPEN_SANS_EMOJI: Font<'static> = load_font("OpenSansEmoji.ttf")
+        .expect("could not load font")
+        .expect("font corrupt");
+    pub static ref K_GOTHIC: Font<'static> = load_font("K Gothic.ttf")
+        .expect("could nto load font")
+        .expect("font corrupt");
     pub static ref PROFILE: RgbaImage = {
         let mut base = current_dir().unwrap();
         base.push("assets");
         base.push("images");
         base.push("ProfileOverlayNew.png");
-        load_image_rgba(base)
+        load_image_rgba(base).expect("could not load image")
     };
     pub static ref DEFAULT_PROFILE: RgbaImage = load_image_rgba(
         current_dir()
@@ -33,7 +41,8 @@ lazy_static! {
             .join("assets")
             .join("images")
             .join("ProfileNew.png")
-    );
+    )
+    .expect("could not load image");
     pub static ref CASTS: HashMap<String, RgbaImage> = {
         let mut base = current_dir().unwrap();
         base.push("assets");
@@ -58,7 +67,8 @@ lazy_static! {
             map.insert(
                 cast_name.to_string(),
                 resize(
-                    &load_image_rgba(base.join(format!("{}.png", cast_name))),
+                    &load_image_rgba(base.join(format!("{}.png", cast_name)))
+                        .expect("could not load image"),
                     22,
                     22,
                     FilterType::Lanczos3,
@@ -77,7 +87,7 @@ lazy_static! {
         for i in 1..=30 {
             let mut path = PathBuf::from(base.clone());
             path.push(format!("{}.png", i));
-            images.push(load_image_rgb(path));
+            images.push(load_image_rgb(path).expect("could not load image"));
         }
         images
     };
