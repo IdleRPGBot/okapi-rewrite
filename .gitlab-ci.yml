@@ -10,7 +10,7 @@ stages:
   - Test compile
 
 rustfmt:
-  stage: Static Analysis
+  stage: Static analysis
   script:
     - cargo fmt
     - bash -c '[ -z "$(git status --porcelain)" ] || exit 1'
