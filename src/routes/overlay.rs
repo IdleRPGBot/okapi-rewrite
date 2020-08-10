@@ -5,10 +5,10 @@ use actix_web::{post, web::Json, HttpResponse};
 use base64::encode;
 use image::imageops::{overlay, resize, FilterType};
 use image::io::Reader;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::io::Cursor;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct OverlayJson {
     url: String,
 }

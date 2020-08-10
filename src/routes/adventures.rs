@@ -5,21 +5,19 @@ use base64::encode;
 use image::Rgb;
 use imageproc::drawing::draw_text_mut;
 use rusttype::Scale;
-use serde::{Deserialize, Serialize};
-use serde_json::value::Value;
+use serde::Deserialize;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct AdventuresJson {
-    percentages: Value,
+    percentages: Vec<Vec<i32>>,
 }
 
 #[post("/api/genadventures")]
 async fn genadventures(body: Json<AdventuresJson>) -> HttpResponse {
     // body is the parsed JSON
-    let chances = body.percentages.as_array().unwrap();
     let mut images = Vec::new();
     for idx in 0..30 {
-        let current_chances = &chances[idx].as_array().unwrap();
+        let current_chances = &body.percentages[idx];
         let chance_min = &current_chances[0];
         let chance_max = &current_chances[1];
         let mut new_image = ADVENTURES[idx].clone();

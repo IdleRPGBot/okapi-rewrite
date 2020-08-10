@@ -6,15 +6,14 @@ use image::{
     load_from_memory, Pixel, Rgba,
 };
 use imageproc::edges::canny;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct ImageJson {
     image: String, // URL
 }
 
-#[derive(Debug)]
 struct Intensity {
     val: i32,
     r: i32,

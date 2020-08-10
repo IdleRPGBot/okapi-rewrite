@@ -2,12 +2,12 @@ use crate::encoder::encode_png;
 use actix_web::{post, web::Json, HttpResponse};
 use image::RgbaImage;
 use resvg::render;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use usvg::Tree;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct ChessJson {
-    xml: String,
+    xml: String, // SVG
 }
 
 #[post("/api/genchess")]

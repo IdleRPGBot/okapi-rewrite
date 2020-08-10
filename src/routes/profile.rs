@@ -6,19 +6,18 @@ use image::io::Reader;
 use image::{imageops::overlay, Rgba};
 use imageproc::drawing::draw_text_mut;
 use rusttype::Scale;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use serde::Deserialize;
+use serde_json::value::Number;
 use std::io::Cursor;
 use textwrap::wrap;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct ProfileJson {
     name: String,
     image: String,
     race: String,
-    color: Value,   // RGBA array
-    classes: Value, // Array of Strings
+    color: Vec<Number>,   // RGBA array
+    classes: Vec<String>, // Array of Strings
     damage: String,
     defense: String,
     sword_name: String,
@@ -30,13 +29,7 @@ struct ProfileJson {
     marriage: String,
     pvp_wins: String,
     adventure: String,
-    icons: Value, // Array of Strings
-}
-
-impl Display for ProfileJson {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        self.serialize(f)
-    }
+    icons: Vec<String>, // Array of Strings
 }
 
 #[post("/api/genprofile")]
@@ -62,13 +55,10 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
                 .to_rgba()
         }
     };
-    let color = body.color.as_array().unwrap();
-    let classes = body.classes.as_array().unwrap();
-    let classes = [classes[0].as_str().unwrap(), classes[1].as_str().unwrap()];
-    let r = color[0].as_i64().unwrap() as u8;
-    let g = color[1].as_i64().unwrap() as u8;
-    let b = color[2].as_i64().unwrap() as u8;
-    let a = (color[3].as_f64().unwrap() * 255.0) as u8;
+    let r = body.color[0].as_u64().unwrap() as u8;
+    let g = body.color[1].as_u64().unwrap() as u8;
+    let b = body.color[2].as_u64().unwrap() as u8;
+    let a = (body.color[3].as_f64().unwrap() * 255.0) as u8;
     let color = Rgba([r, g, b, a]);
     // Font size
     let mut scale = Scale { x: 26.0, y: 26.0 };
@@ -82,7 +72,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         235,
         scale,
         &TRAVITIA_FONT,
-        &classes[0],
+        &body.classes[0],
     );
     draw_text_mut(
         &mut img,
@@ -91,7 +81,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         259,
         scale,
         &TRAVITIA_FONT,
-        &classes[1],
+        &body.classes[1],
     );
     scale = Scale { x: 15.0, y: 22.0 };
     draw_text_mut(
@@ -220,9 +210,8 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         }
     }
     overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
-    let icons = body.icons.as_array().unwrap();
-    let icon_1 = icons[0].as_str().unwrap();
-    let icon_2 = icons[1].as_str().unwrap();
+    let icon_1 = &body.icons[0];
+    let icon_2 = &body.icons[1];
     if icon_1 != "none" {
         overlay(&mut img, &CASTS[icon_1], 205, 232);
     }
