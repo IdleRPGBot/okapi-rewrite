@@ -4,8 +4,6 @@ use imageproc::definitions::Clamp;
 use imageproc::drawing::Canvas;
 use imageproc::pixelops::weighted_sum;
 use rusttype::{point, Font, PositionedGlyph, Scale};
-use std::f32;
-use std::i32;
 
 /// Draws colored text on an image in place. `scale` is augmented font scaling on both the x and y axis (in pixels). Note that this function *does not* support newlines, you must do this manually
 pub fn draw_text_mut<'a, C>(
