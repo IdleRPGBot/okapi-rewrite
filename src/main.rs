@@ -46,7 +46,7 @@ async fn main() -> IoResult<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(middleware::Logger::default())
-            .data(
+            .app_data(
                 web::JsonConfig::default()
                     .limit(4096)
                     .error_handler(json_error_handler),
