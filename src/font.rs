@@ -25,13 +25,21 @@ pub fn draw_text_mut<'a, C>(
     let glyphs: Vec<PositionedGlyph<'_>> = font.layout(text, scale, offset).collect();
 
     // Calculate the X offset of the last character's right edge
-    // TODO: Do not unwrap, get the last one that is Some(T)
-    let last_glyph = glyphs.last().unwrap().pixel_bounding_box().unwrap().max.x;
+    let last_glyph = glyphs
+        .iter()
+        .map(|g| g.pixel_bounding_box())
+        .last()
+        .flatten();
 
-    let glyphs = match last_glyph > max_width {
+    let current_width = match last_glyph {
+        Some(g) => g.max.x,
+        None => return,
+    };
+
+    let glyphs = match current_width > max_width {
         true => {
             // It is too big, adjust our size
-            let shrink_factor = last_glyph as f32 / max_width as f32;
+            let shrink_factor = current_width as f32 / max_width as f32;
             let new_scale = Scale {
                 x: scale.x / shrink_factor,
                 y: scale.y,
