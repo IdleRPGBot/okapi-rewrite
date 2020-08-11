@@ -1,10 +1,11 @@
 use crate::constants::*;
 use crate::encoder::encode_png;
+use crate::font::draw_text_mut;
 use crate::proxy::fetch;
 use actix_web::{post, web, HttpResponse};
 use image::io::Reader;
 use image::{imageops::overlay, Rgba};
-use imageproc::drawing::{draw_text_mut, Blend};
+use imageproc::drawing::Blend;
 use rusttype::Scale;
 use serde::Deserialize;
 use serde_json::value::Number;
@@ -113,6 +114,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.name,
+        130,
     );
     draw_text_mut(
         &mut blend,
@@ -122,6 +124,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.race,
+        130,
     );
     scale = Scale { x: 23.0, y: 23.0 };
     draw_text_mut(
@@ -132,6 +135,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.classes[0],
+        130,
     );
     draw_text_mut(
         &mut blend,
@@ -141,6 +145,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.classes[1],
+        130,
     );
     scale = Scale { x: 15.0, y: 22.0 };
     draw_text_mut(
@@ -151,6 +156,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.damage,
+        95,
     );
     draw_text_mut(
         &mut blend,
@@ -160,6 +166,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.defense,
+        95,
     );
     scale = Scale { x: 22.0, y: 22.0 };
     draw_text_mut(
@@ -170,8 +177,18 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.level,
+        60,
     );
-    draw_text_mut(&mut blend, color, 284, 337, scale, &TRAVITIA_FONT, "soon™");
+    draw_text_mut(
+        &mut blend,
+        color,
+        284,
+        337,
+        scale,
+        &TRAVITIA_FONT,
+        "soon™",
+        60,
+    );
     if body.sword_name.len() < 18 {
         scale = Scale { x: 35.0, y: 45.0 };
         draw_text_mut(
@@ -182,6 +199,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
             scale,
             &TRAVITIA_FONT,
             &body.sword_name,
+            200,
         );
     } else {
         scale = Scale { x: 19.0, y: 19.0 };
@@ -195,6 +213,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
                 scale,
                 &TRAVITIA_FONT,
                 &line,
+                200,
             );
         }
     }
@@ -208,6 +227,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
             scale,
             &TRAVITIA_FONT,
             &body.shield_name,
+            200,
         );
     } else {
         scale = Scale { x: 19.0, y: 19.0 };
@@ -221,6 +241,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
                 scale,
                 &TRAVITIA_FONT,
                 &line,
+                200,
             );
         }
     }
@@ -233,8 +254,18 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.money,
+        231,
     );
-    draw_text_mut(&mut blend, color, 519, 121, scale, &TRAVITIA_FONT, "soon™");
+    draw_text_mut(
+        &mut blend,
+        color,
+        519,
+        121,
+        scale,
+        &TRAVITIA_FONT,
+        "soon™",
+        231,
+    );
     draw_text_mut(
         &mut blend,
         color,
@@ -243,6 +274,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.god,
+        231,
     );
     draw_text_mut(
         &mut blend,
@@ -252,6 +284,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.guild,
+        231,
     );
     draw_text_mut(
         &mut blend,
@@ -261,6 +294,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.marriage,
+        231,
     );
     draw_text_mut(
         &mut blend,
@@ -270,6 +304,7 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
         scale,
         &TRAVITIA_FONT,
         &body.pvp_wins,
+        231,
     );
     let mut adv = body.adventure.as_str().lines();
     let line_1 = adv.next().unwrap();
@@ -277,11 +312,38 @@ async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
     match adv.next() {
         Some(line_2) => {
             scale = Scale { x: 34.0, y: 34.0 };
-            draw_text_mut(&mut blend, color, 519, 538, scale, &TRAVITIA_FONT, line_1);
-            draw_text_mut(&mut blend, color, 519, 576, scale, &TRAVITIA_FONT, line_2);
+            draw_text_mut(
+                &mut blend,
+                color,
+                519,
+                538,
+                scale,
+                &TRAVITIA_FONT,
+                line_1,
+                231,
+            );
+            draw_text_mut(
+                &mut blend,
+                color,
+                519,
+                576,
+                scale,
+                &TRAVITIA_FONT,
+                line_2,
+                231,
+            );
         }
         None => {
-            draw_text_mut(&mut blend, color, 519, 545, scale, &TRAVITIA_FONT, line_1);
+            draw_text_mut(
+                &mut blend,
+                color,
+                519,
+                545,
+                scale,
+                &TRAVITIA_FONT,
+                line_1,
+                231,
+            );
         }
     }
     let final_image = encode_png(&blend.0).expect("encoding PNG failed");

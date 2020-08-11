@@ -1498,6 +1498,7 @@ version = "1.0.0"
 dependencies = [
  "actix-web",
  "base64",
+ "conv",
  "env_logger",
  "image",
  "imageproc",
