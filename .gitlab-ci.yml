@@ -19,4 +19,4 @@ rustfmt:
 test-compile:
   stage: Test compile
   script:
-    - podman build --storage-driver vfs -t okapi:latest .
+    - podman build --runtime crun --storage-driver vfs -t okapi:latest .
