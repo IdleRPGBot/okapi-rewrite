@@ -3,7 +3,6 @@ image: "quay.io/podman/upstream"
 before_script:
   - podman --version
   - curl -sSf https://sh.rustup.rs | sh -s -- -y
-  - dnf install -y git-core
   - source $HOME/.cargo/env
 
 stages:
@@ -13,8 +12,7 @@ stages:
 rustfmt:
   stage: Static analysis
   script:
-    - cargo fmt
-    - bash -c '[ -z "$(git status --porcelain)" ] || exit 1'
+    - cargo fmt -- --check
 
 test-compile:
   stage: Test compile
