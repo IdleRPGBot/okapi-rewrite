@@ -48,7 +48,7 @@ async fn main() -> IoResult<()> {
             .wrap(middleware::Logger::default())
             .app_data(
                 web::JsonConfig::default()
-                    .limit(4096)
+                    .limit(32768)
                     .error_handler(json_error_handler),
             )
             .service(index)
