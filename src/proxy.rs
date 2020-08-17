@@ -6,10 +6,10 @@ use std::time::Duration;
 pub async fn fetch(url: &str) -> Result<Bytes, Error> {
     let mut headers = HEADERS.clone();
     let url_to_call: String = match &*PROXY_URL {
-        Some(url) => {
+        Some(proxy_url) => {
             let requested_uri = HeaderName::from_lowercase(b"requested-uri").unwrap();
             headers.insert(requested_uri, url.parse().unwrap());
-            url.to_string()
+            proxy_url.to_string()
         }
         None => url.to_string(),
     };
