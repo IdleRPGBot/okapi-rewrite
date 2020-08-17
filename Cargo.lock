@@ -23,9 +23,9 @@ dependencies = [
 
 [[package]]
 name = "actix-connect"
-version = "2.0.0-alpha.3"
+version = "2.0.0-alpha.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2551ed85d5e157c13f8f523cdb13a6292d948049eb2dc2072bbee3ec350399a2"
+checksum = "2d91e8c0b10a7c3a16e8a59343e81d8a495173f32ff33baf8f162dcc6c8d4fa3"
 dependencies = [
  "actix-codec",
  "actix-rt",
@@ -42,9 +42,9 @@ dependencies = [
 
 [[package]]
 name = "actix-http"
-version = "2.0.0-beta.2"
+version = "2.0.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44529cd6813ebf4a2f2a6ea36ffe88a0e4b0bc08b26ad0b8f7f4581d4d4f3247"
+checksum = "ab2f035e3f5b0e336abf92a78097c430b7781d2b032ded1142d77ab62ed0b786"
 dependencies = [
  "actix-codec",
  "actix-connect",
@@ -186,9 +186,9 @@ dependencies = [
 
 [[package]]
 name = "actix-tls"
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd2d9f3e70cbad0f06c6922950c5997ba0fd44c82e143d1c374023eb50457588"
+checksum = "28b661e9c27e48b6f7ef4673359ac1c6d4eed503c1170c874cc05ea2cca3952a"
 dependencies = [
  "actix-codec",
  "actix-rt",
@@ -196,7 +196,7 @@ dependencies = [
  "actix-utils",
  "derive_more",
  "either",
- "futures",
+ "futures-util",
  "log",
 ]
 
@@ -220,9 +220,9 @@ dependencies = [
 
 [[package]]
 name = "actix-web"
-version = "3.0.0-beta.1"
+version = "3.0.0-beta.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9125c29b7d9911bfdb4d0d4d8f1cf4fee4f21515cf2a405a423c30c245364297"
+checksum = "7c867f25bb4470ca1519b8f29d8697ffbb199d15c79b1ce9b64c643c53794726"
 dependencies = [
  "actix-codec",
  "actix-http",
@@ -1879,9 +1879,9 @@ dependencies = [
 
 [[package]]
 name = "rgb"
-version = "0.8.22"
+version = "0.8.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "339d50f3fc040b7929d140a3be5c4485d7b5cfa6f3733fc9dbc0744633c50933"
+checksum = "7466cad0eb3303798229ffab23bb8f598d185c71f3dfa17cd751d440e375782a"
 dependencies = [
  "bytemuck",
 ]
