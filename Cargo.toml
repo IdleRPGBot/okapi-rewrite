@@ -14,7 +14,7 @@ actix-web = "3.0.0-beta.3"
 base64 = "0.12"
 conv = "0.3"
 env_logger = "0.7"
-image = { version = "0.23", features = ["gif", "jpeg", "png", "webp", "jpeg_rayon"] }
+image = { version = "0.23", default_features = false, features = ["gif", "jpeg", "png", "webp", "jpeg_rayon"] }
 imageproc = "0.21"
 lazy_static = "1.4"
 resvg = "0.11"
