@@ -2,7 +2,7 @@ FROM registry.fedoraproject.org/fedora-minimal:34 AS builder
 
 WORKDIR /build
 
-RUN microdnf install -y cmake clang make findutils lld && \
+RUN microdnf install -y clang findutils lld && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
 COPY Cargo.toml Cargo.lock ./
