@@ -1,2 +1,12 @@
 Dockerfile
+Dockerfile.alpine
 target/
+assets/fonts/CaviarDreams.ttf
+assets/fonts/K Gothic.ttf
+assets/fonts/OpenSansEmoji.ttf
+assets/images/Foreground.png
+assets/images/Foreground.png.old
+assets/images/Foreground2.png
+assets/images/Foreground2.png.old
+assets/images/Profile.png
+assets/images/Profile.png.old
