@@ -1,8 +1,8 @@
-FROM registry.fedoraproject.org/fedora-minimal:32 AS builder
+FROM registry.fedoraproject.org/fedora-minimal:34 AS builder
 
 WORKDIR /build
 
-RUN microdnf install -y cmake clang make openssl-devel findutils && \
+RUN microdnf install -y cmake clang make findutils lld && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
 
 COPY Cargo.toml Cargo.lock ./
@@ -20,7 +20,7 @@ RUN set -ex && \
     cargo build --release && \
     strip /build/target/release/okapi
 
-FROM registry.fedoraproject.org/fedora-minimal:32
+FROM registry.fedoraproject.org/fedora-minimal:34
 
 WORKDIR /okapi
 
