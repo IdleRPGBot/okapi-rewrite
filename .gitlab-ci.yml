@@ -21,7 +21,7 @@ compile-amd64:
     - podman build --runtime crun --storage-driver vfs --format docker -t okapi:amd64 .
     - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
         podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
-        podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
+        podman --storage-driver vfs push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
       fi
 
 compile-arm64:
@@ -34,7 +34,7 @@ compile-arm64:
         -t okapi:arm64 .
     - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
         podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
-        podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
+        podman --storage-driver vfs push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
       fi
 
 publish-latest:
@@ -43,7 +43,7 @@ publish-latest:
     - current@Adrian/okapi-rewrite
   script:
     - podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
-    - podman manifest create okapi-rewrite:latest
-    - podman manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:amd64
-    - podman manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:arm64
-    - podman manifest push okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite --format docker
+    - podman --storage-driver vfs manifest create okapi-rewrite:latest
+    - podman --storage-driver vfs manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:amd64
+    - podman --storage-driver vfs manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:arm64
+    - podman --storage-driver vfs manifest push okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite --format docker
