@@ -43,7 +43,9 @@ publish-latest:
     - current@Adrian/okapi-rewrite
   script:
     - podman --storage-driver vfs login quay.io --username $QUAY_USERNAME --password $QUAY_PASSWORD
-    - podman --storage-driver vfs manifest create okapi-rewrite:latest
-    - podman --storage-driver vfs manifest add okapi-rewrite:latest oci:quay.io/$QUAY_USERNAME/okapi:amd64
-    - podman --storage-driver vfs manifest add okapi-rewrite:latest oci:quay.io/$QUAY_USERNAME/okapi:arm64
-    - podman --storage-driver vfs manifest push okapi-rewrite:latest quay.io/$QUAY_USERNAME/okapi
+    - podman --storage-driver vfs manifest create okapi:latest
+    - podman --storage-driver vfs pull quay.io/$QUAY_USERNAME/okapi:arm64
+    - podman --storage-driver vfs pull quay.io/$QUAY_USERNAME/okapi:amd64
+    - podman --storage-driver vfs manifest add okapi:latest okapi:amd64
+    - podman --storage-driver vfs manifest add okapi:latest okapi:arm64
+    - podman --storage-driver vfs manifest push okapi:latest docker://quay.io/$QUAY_USERNAME/okapi:latest
