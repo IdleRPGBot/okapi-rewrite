@@ -4,7 +4,7 @@ Okapi is the image generation API for [IdleRPG](https://git.travitia.xyz/Kenvyra
 
 ## Running it
 
-There is a [Docker image](https://hub.docker.com/r/gelbpunkt/okapi-rewrite) for okapi.
+There is a [podman image](https://quay.io/repository/gelbpunkt/okapi) for okapi.
 
 There are several enviroment variables to configure it:
 

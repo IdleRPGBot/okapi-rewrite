@@ -6,7 +6,7 @@ before_script:
 stages:
   - Static analysis
   - Compiles
-  - Publish latest to Dockerhub
+  - Publish latest to quay
 
 rustfmt:
   stage: Static analysis
@@ -18,32 +18,32 @@ rustfmt:
 compile-amd64:
   stage: Compiles
   script:
-    - podman build --runtime crun --storage-driver vfs --format docker -t okapi:amd64 .
-    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
-        podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
-        podman --storage-driver vfs push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
+    - podman build --runtime crun --storage-driver vfs -t okapi:amd64 .
+    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$QUAY_USERNAME" != "" ] && [ "$QUAY_PASSWORD" != "" ]; then
+        podman --storage-driver vfs login quay.io --username $QUAY_USERNAME --password $QUAY_PASSWORD &&
+        podman --storage-driver vfs push okapi:amd64 quay.io/$QUAY_USERNAME/okapi:amd64;
       fi
 
 compile-arm64:
   stage: Compiles
   script:
-    - podman build --runtime crun --storage-driver vfs --format docker --arch arm64
+    - podman build --runtime crun --storage-driver vfs --arch arm64
         --build-arg RUST_TARGET="aarch64-unknown-linux-gnu"
         --build-arg GLIBC_TARGET="aarch64-linux-gnu"
         --build-arg FINAL_TARGET="arm64v8"
         -t okapi:arm64 .
-    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
-        podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
-        podman --storage-driver vfs push okapi:arm64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:arm64;
+    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$QUAY_USERNAME" != "" ] && [ "$QUAY_PASSWORD" != "" ]; then
+        podman --storage-driver vfs login quay.io --username $QUAY_USERNAME --password $QUAY_PASSWORD &&
+        podman --storage-driver vfs push okapi:arm64 quay.io/$QUAY_USERNAME/okapi:arm64;
       fi
 
 publish-latest:
-  stage: Publish latest to Dockerhub
+  stage: Publish latest to quay
   only:
     - current@Adrian/okapi-rewrite
   script:
-    - podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+    - podman --storage-driver vfs login quay.io --username $QUAY_USERNAME --password $QUAY_PASSWORD
     - podman --storage-driver vfs manifest create okapi-rewrite:latest
-    - podman --storage-driver vfs manifest add okapi-rewrite:latest docker://docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64
-    - podman --storage-driver vfs manifest add okapi-rewrite:latest docker://docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:arm64
-    - podman --storage-driver vfs manifest push okapi-rewrite:latest docker://docker.io/$DOCKERHUB_USERNAME/okapi-rewrite --format docker
+    - podman --storage-driver vfs manifest add okapi-rewrite:latest quay.io/$QUAY_USERNAME/okapi:amd64
+    - podman --storage-driver vfs manifest add okapi-rewrite:latest quay.io/$QUAY_USERNAME/okapi:arm64
+    - podman --storage-driver vfs manifest push okapi-rewrite:latest quay.io/$QUAY_USERNAME/okapi
