@@ -27,7 +27,7 @@ compile-amd64:
 compile-arm64:
   stage: Compiles
   script:
-    - podman build --runtime crun --storage-driver vfs
+    - podman build --runtime crun --storage-driver vfs --format docker
         --build-arg RUST_TARGET="aarch64-unknown-linux-gnu"
         --build-arg GLIBC_TARGET="aarch64-linux-gnu"
         --build-arg FINAL_TARGET="arm64v8"
