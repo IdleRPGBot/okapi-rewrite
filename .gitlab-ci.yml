@@ -2,8 +2,6 @@ image: "quay.io/podman/testing"
 
 before_script:
   - podman --version
-  - curl -sSf https://sh.rustup.rs | sh -s -- -y
-  - source $HOME/.cargo/env
 
 stages:
   - Static analysis
@@ -13,6 +11,8 @@ stages:
 rustfmt:
   stage: Static analysis
   script:
+    - curl -sSf https://sh.rustup.rs | sh -s -- -y
+    - source $HOME/.cargo/env
     - cargo fmt -- --check
 
 compile-amd64:
@@ -20,7 +20,7 @@ compile-amd64:
   script:
     - podman build --runtime crun --storage-driver vfs --format docker -t okapi:amd64 .
     - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
-        podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
+        podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
         podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
       fi
 
@@ -31,9 +31,9 @@ compile-arm64:
         --build-arg RUST_TARGET="aarch64-unknown-linux-gnu"
         --build-arg GLIBC_TARGET="aarch64-linux-gnu"
         --build-arg FINAL_TARGET="arm64v8"
-        --target okapi:arm64 .
+        -t okapi:arm64 .
     - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
-        podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
+        podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
         podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
       fi
 
@@ -42,7 +42,7 @@ publish-latest:
   only:
     - current@Adrian/okapi-rewrite
   script:
-    - podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+    - podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
     - podman manifest create okapi-rewrite:latest
     - podman manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:amd64
     - podman manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:arm64
