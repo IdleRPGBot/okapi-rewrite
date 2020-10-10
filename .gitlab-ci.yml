@@ -19,7 +19,7 @@ compile-amd64:
   stage: Compiles
   script:
     - podman build --runtime crun --storage-driver vfs --format docker -t okapi:amd64 .
-    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" && "$DOCKERHUB_USERNAME" != "" && "$DOCKERHUB_PASSWORD" != ""]; then
+    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
         podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
         podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
       fi
@@ -27,12 +27,12 @@ compile-amd64:
 compile-arm64:
   stage: Compiles
   script:
-    - podman build --runtime crun --storage-driver vfs \
-        --build-arg RUST_TARGET="aarch64-unknown-linux-gnu" \
-        --build-arg GLIBC_TARGET="aarch64-linux-gnu" \
-        --build-arg FINAL_TARGET="arm64v8" \
+    - podman build --runtime crun --storage-driver vfs
+        --build-arg RUST_TARGET="aarch64-unknown-linux-gnu"
+        --build-arg GLIBC_TARGET="aarch64-linux-gnu"
+        --build-arg FINAL_TARGET="arm64v8"
         --target okapi:arm64 .
-    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" && "$DOCKERHUB_USERNAME" != "" && "$DOCKERHUB_PASSWORD" != ""]; then
+    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
         podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
         podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
       fi
