@@ -7,14 +7,43 @@ before_script:
 
 stages:
   - Static analysis
-  - Test compile
+  - Compiles
+  - Publish latest to Dockerhub
 
 rustfmt:
   stage: Static analysis
   script:
     - cargo fmt -- --check
 
-test-compile:
-  stage: Test compile
+compile-amd64:
+  stage: Compiles
   script:
-    - podman build --runtime crun --storage-driver vfs -t okapi:latest .
+    - podman build --runtime crun --storage-driver vfs --format docker -t okapi:amd64 .
+    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" && "$DOCKERHUB_USERNAME" != "" && "$DOCKERHUB_PASSWORD" != ""]; then
+        podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+        podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
+      fi
+
+compile-arm64:
+  stage: Compiles
+  script:
+    - podman build --runtime crun --storage-driver vfs \
+        --build-arg RUST_TARGET="aarch64-unknown-linux-gnu" \
+        --build-arg GLIBC_TARGET="aarch64-linux-gnu" \
+        --build-arg FINAL_TARGET="arm64v8" \
+        --target okapi:arm64 .
+    - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" && "$DOCKERHUB_USERNAME" != "" && "$DOCKERHUB_PASSWORD" != ""]; then
+        podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+        podman push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
+      fi
+
+publish-latest:
+  stage: Publish latest to Dockerhub
+  only:
+    - current@Adrian/okapi-rewrite
+  script:
+    - podman login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+    - podman manifest create okapi-rewrite:latest
+    - podman manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:amd64
+    - podman manifest add okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite:arm64
+    - podman manifest push okapi-rewrite:latest docker://docker.io/gelbpunkt/okapi-rewrite --format docker

@@ -4,11 +4,6 @@ version = "1.0.0"
 authors = ["Jens Reidel <jens@troet.org>"]
 edition = "2018"
 
-[[bin]]
-name = "okapi"
-path = "src/main.rs"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 actix-web = { version = "3", default_features = false }
 base64 = "0.12"
@@ -17,10 +12,13 @@ env_logger = "0.7"
 image = { version = "0.23", default_features = false, features = ["gif", "jpeg", "png", "webp", "jpeg_rayon"] }
 imageproc = "0.21"
 lazy_static = "1.4"
-resvg = "0.11"
+resvg = { version = "0.11", default_features = false }
 reqwest = { version = "0.10", default_features = false, features = ["rustls-tls"] }
 rusttype = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 textwrap = "0.12"
-usvg = "0.11"
+usvg = { version = "0.11", default_features = false }
+
+[patch.crates-io]
+tiny-skia = { git = "https://github.com/Gelbpunkt/tiny-skia" }
