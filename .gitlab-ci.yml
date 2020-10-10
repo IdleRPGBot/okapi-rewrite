@@ -34,7 +34,7 @@ compile-arm64:
         -t okapi:arm64 .
     - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$DOCKERHUB_USERNAME" != "" ] && [ "$DOCKERHUB_PASSWORD" != "" ]; then
         podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD &&
-        podman --storage-driver vfs push okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64;
+        podman --storage-driver vfs push okapi:arm64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:arm64;
       fi
 
 publish-latest:
