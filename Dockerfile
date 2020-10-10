@@ -1,35 +1,33 @@
-# Because there is no such thing as proper toolchains
-# for cross-compiling to glibc (musl.cc is just superior)
-# We ONLY support aarch64 and x86_64 host via linaro
-
-# Rust syntax target, either x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu
-ARG RUST_TARGET="x86_64-unknown-linux-gnu"
-# glibc target, either x86_64-linux-gnu, aarch64-linux-gnu
-ARG GLIBC_TARGET="x86_64-linux-gnu"
+# Rust syntax target, either x86_64-unknown-linux-musl, aarch64-unknown-linux-musl, arm-unknown-linux-musleabi etc.
+ARG RUST_TARGET="x86_64-unknown-linux-musl"
+# Musl target, either x86_64-linux-musl, aarch64-linux-musl, arm-linux-musleabi, etc.
+ARG MUSL_TARGET="x86_64-linux-musl"
 # This ONLY works with defaults which is rather annoying
 # but better than nothing
 # Uses docker's own naming for architectures
-# e.g. x86_64 -> amd64, aarch64 -> arm64v8
+# e.g. x86_64 -> amd64, aarch64 -> arm64v8, arm -> arm32v7
 ARG FINAL_TARGET="amd64"
 
-FROM docker.io/library/fedora:rawhide AS builder
+FROM docker.io/library/alpine:edge AS builder
+ARG MUSL_TARGET
 ARG RUST_TARGET
-ARG GLIBC_TARGET
 
-RUN curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y && \
-    source $HOME/.cargo/env && \
-    if [ "$RUST_TARGET" != "x86_64-unknown-linux-gnu" ]; then \
-        rustup target add $RUST_TARGET; \
-        dnf install -y xz gcc clang && \
-        curl -L https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz -o /toolchain.tar.xz && \
-        tar xf toolchain.tar.xz && \
-        ln -s "/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc" "/usr/bin/$GLIBC_TARGET-gcc" && \
-        ln -s "/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-ld" "/usr/bin/$GLIBC_TARGET-ld" && \
-        ln -s "/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-strip" "/usr/bin/actual-strip" && \
-        ln -s "/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-g++" "/usr/bin/$GLIBC_TARGET-g++"; \
+RUN apk upgrade && \
+    apk add curl gcc musl-dev && \
+    curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
+
+RUN source $HOME/.cargo/env && \
+    if [ "$RUST_TARGET" != $(rustup target list --installed) ]; then \
+        rustup target add $RUST_TARGET && \
+        curl -L "https://musl.cc/$MUSL_TARGET-cross.tgz" -o /toolchain.tgz && \
+        tar xf toolchain.tgz && \
+        ln -s "/$MUSL_TARGET-cross/bin/$MUSL_TARGET-gcc" "/usr/bin/$MUSL_TARGET-gcc" && \
+        ln -s "/$MUSL_TARGET-cross/bin/$MUSL_TARGET-ld" "/usr/bin/$MUSL_TARGET-ld" && \
+        ln -s "/$MUSL_TARGET-cross/bin/$MUSL_TARGET-strip" "/usr/bin/actual-strip"; \
     else \
-        dnf install -y gcc clang lld && \
-        ln -s /usr/bin/strip /usr/bin/actual-strip; \
+        echo "skipping toolchain as we are native" && \
+        ln -s /usr/bin/strip /usr/bin/actual-strip && \
+        apk add lld; \
     fi
 
 WORKDIR /build
@@ -40,27 +38,23 @@ COPY .cargo ./.cargo/
 RUN mkdir src/
 RUN echo 'fn main() {}' > ./src/main.rs
 RUN source $HOME/.cargo/env && \
-    if [ "$RUST_TARGET" != "x86_64-unknown-linux-gnu" ]; then \
-        export CXXFLAGS="--sysroot /gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc -I/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/include/c++/9.2.1 -I/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/include/c++/9.2.1/aarch64-none-linux-gnu"; \
-    fi && \
     cargo build --release \
         --target="$RUST_TARGET"
 
-RUN rm -f target/$RUST_TARGET/release/deps/okapi_rewrite*
-
+RUN rm -f target/$RUST_TARGET/release/deps/okapi*
 COPY ./src ./src
 
-RUN set -ex && \
-    source $HOME/.cargo/env && \
-    cargo build --release --target="$RUST_TARGET" && \
-    actual-strip /build/target/$RUST_TARGET/release/okapi-rewrite && \
-    cp /build/target/$RUST_TARGET/release/okapi-rewrite /okapi
+RUN source $HOME/.cargo/env && \
+    cargo build --release \
+        --target="$RUST_TARGET" && \
+    cp target/$RUST_TARGET/release/okapi /okapi && \
+    actual-strip /okapi
 
-FROM docker.io/${FINAL_TARGET}/fedora:rawhide
+FROM docker.io/${FINAL_TARGET}/alpine:edge
 
 WORKDIR /okapi
 
-COPY --from=builder /okapi /usr/bin/
+COPY --from=builder /okapi /usr/bin/okapi
 COPY assets /okapi/assets
 
 CMD /usr/bin/okapi

@@ -28,8 +28,8 @@ compile-arm64:
   stage: Compiles
   script:
     - podman build --runtime crun --storage-driver vfs --arch arm64
-        --build-arg RUST_TARGET="aarch64-unknown-linux-gnu"
-        --build-arg GLIBC_TARGET="aarch64-linux-gnu"
+        --build-arg RUST_TARGET="aarch64-unknown-linux-musl"
+        --build-arg MUSL_TARGET="aarch64-linux-musl"
         --build-arg FINAL_TARGET="arm64v8"
         -t okapi:arm64 .
     - if [ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ] && [ "$QUAY_USERNAME" != "" ] && [ "$QUAY_PASSWORD" != "" ]; then
