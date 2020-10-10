@@ -2153,7 +2153,7 @@ dependencies = [
 [[package]]
 name = "tiny-skia"
 version = "0.1.0"
-source = "git+https://github.com/Gelbpunkt/tiny-skia#0cd0f0e55e6f011f4beeb3bf9a9c432fc1645bea"
+source = "git+https://github.com/Gelbpunkt/tiny-skia#6413c7984f8af1b127f3507b87fb5bc02ed20c86"
 dependencies = [
  "cc",
  "png",
