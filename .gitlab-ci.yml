@@ -42,7 +42,6 @@ publish-latest:
   only:
     - current@Adrian/okapi-rewrite
   script:
-    - podman rmi okapi:arm64 okapi:amd64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:arm64 docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64
     - podman --storage-driver vfs login docker.io --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
     - podman --storage-driver vfs manifest create okapi-rewrite:latest
     - podman --storage-driver vfs manifest add okapi-rewrite:latest docker://docker.io/$DOCKERHUB_USERNAME/okapi-rewrite:amd64
