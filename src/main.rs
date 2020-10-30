@@ -45,6 +45,7 @@ async fn main() -> IoResult<()> {
     };
 
     HttpServer::new(|| {
+        let client = proxy::Fetcher::new();
         App::new()
             .wrap(middleware::Logger::default())
             .app_data(
@@ -52,6 +53,7 @@ async fn main() -> IoResult<()> {
                     .limit(65536)
                     .error_handler(json_error_handler),
             )
+            .data(client)
             .service(routes::index::index)
             .service(routes::adventures::genadventures)
             .service(routes::chess::genchess)

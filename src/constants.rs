@@ -2,10 +2,6 @@ use crate::loaders::*;
 use image::imageops::{resize, FilterType};
 use image::{RgbImage, RgbaImage};
 use lazy_static::lazy_static;
-use reqwest::{
-    header::{HeaderMap, HeaderName},
-    Client,
-};
 use rusttype::Font;
 use std::collections::HashMap;
 use std::env::{current_dir, var};
@@ -90,20 +86,5 @@ lazy_static! {
             images.push(load_image_rgb(path).expect("could not load image"));
         }
         images
-    };
-    pub static ref CLIENT: Client = Client::new();
-    pub static ref HEADERS: HeaderMap = {
-        let mut headers = HeaderMap::new();
-        match var("PROXY_AUTH") {
-            Ok(key) => {
-                let proxy_authorization_key =
-                    HeaderName::from_lowercase(b"proxy-authorization-key").unwrap();
-                headers.insert(proxy_authorization_key, key.parse().unwrap());
-            }
-            Err(_) => {}
-        };
-        let accept = HeaderName::from_lowercase(b"accept").unwrap();
-        headers.insert(accept, "application/json".parse().unwrap());
-        headers
     };
 }

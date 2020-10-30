@@ -1,7 +1,11 @@
 use crate::constants::PROFILE;
 use crate::encoder::encode_png;
-use crate::proxy::fetch;
-use actix_web::{post, web::Json, HttpResponse};
+use crate::proxy::Fetcher;
+use actix_web::{
+    post,
+    web::{Data, Json},
+    HttpResponse,
+};
 use base64::encode;
 use image::imageops::{overlay, resize, FilterType};
 use image::io::Reader;
@@ -14,8 +18,8 @@ struct OverlayJson {
 }
 
 #[post("/api/genoverlay")]
-async fn genoverlay(body: Json<OverlayJson>) -> HttpResponse {
-    let res = match fetch(&body.url).await {
+async fn genoverlay(body: Json<OverlayJson>, fetcher: Data<Fetcher>) -> HttpResponse {
+    let res = match fetcher.fetch(&body.url).await {
         Ok(buf) => buf,
         Err(e) => {
             return HttpResponse::UnprocessableEntity()

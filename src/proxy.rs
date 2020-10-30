@@ -1,25 +1,62 @@
-use crate::constants::{CLIENT, HEADERS, PROXY_URL};
-use actix_web::web::Bytes;
-use reqwest::{header::HeaderName, Error};
+use crate::constants::PROXY_URL;
+use actix_web::{
+    client::{Client, ClientBuilder, PayloadError, SendRequestError},
+    http::{HeaderName, HeaderValue},
+    web::Bytes,
+};
+use std::env::var;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::time::Duration;
 
-pub async fn fetch(url: &str) -> Result<Bytes, Error> {
-    let mut headers = HEADERS.clone();
-    let url_to_call: String = match &*PROXY_URL {
-        Some(proxy_url) => {
-            let requested_uri = HeaderName::from_lowercase(b"requested-uri").unwrap();
-            headers.insert(requested_uri, url.parse().unwrap());
-            proxy_url.to_string()
+pub enum FetchError {
+    Requesting(SendRequestError),
+    Payload(PayloadError),
+}
+
+impl Display for FetchError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            FetchError::Requesting(e) => e.fmt(f),
+            FetchError::Payload(e) => e.fmt(f),
         }
-        None => url.to_string(),
-    };
-    let resp = CLIENT
-        .get(&url_to_call)
-        .headers(headers)
-        .timeout(Duration::new(3, 0))
-        .send()
-        .await?
-        .bytes()
-        .await?;
-    Ok(resp)
+    }
+}
+
+pub struct Fetcher {
+    client: Client,
+}
+
+impl Fetcher {
+    pub fn new() -> Self {
+        let mut client = ClientBuilder::new().header("accept", "application/json");
+        if let Ok(key) = var("PROXY_AUTH") {
+            client = client.header("proxy-authorization-key", key);
+        }
+        Self {
+            client: client.finish(),
+        }
+    }
+
+    pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
+        let req = {
+            if let Some(url) = &*PROXY_URL {
+                self.client.get(url).header(
+                    HeaderName::from_lowercase(b"requested-uri").unwrap(),
+                    HeaderValue::from_str(&url).unwrap(),
+                )
+            } else {
+                self.client.get(url)
+            }
+        };
+        match req.timeout(Duration::new(3, 0)).send().await {
+            Ok(mut res) => {
+                let body = res.body().await;
+                match body {
+                    Ok(bytes) => Ok(bytes),
+                    Err(e) => Err(FetchError::Payload(e)),
+                }
+            }
+            Err(e) => Err(FetchError::Requesting(e)),
+        }
+    }
 }

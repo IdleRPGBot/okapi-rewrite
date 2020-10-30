@@ -1,6 +1,6 @@
 use crate::encoder::encode_png;
-use crate::proxy::fetch;
-use actix_web::{post, web::Json, HttpResponse};
+use crate::proxy::Fetcher;
+use actix_web::{post, web::{Data, Json}, HttpResponse};
 use image::{
     imageops::{invert, resize, FilterType},
     load_from_memory, Pixel, Rgba,
@@ -22,8 +22,8 @@ struct Intensity {
 }
 
 #[post("/api/imageops/pixel")]
-async fn pixelate(body: Json<ImageJson>) -> HttpResponse {
-    let res = match fetch(&body.image).await {
+async fn pixelate(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResponse {
+    let res = match fetcher.fetch(&body.image).await {
         Ok(buf) => buf,
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
@@ -53,8 +53,8 @@ async fn pixelate(body: Json<ImageJson>) -> HttpResponse {
 }
 
 #[post("/api/imageops/invert")]
-async fn invert_endpoint(body: Json<ImageJson>) -> HttpResponse {
-    let res = match fetch(&body.image).await {
+async fn invert_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResponse {
+    let res = match fetcher.fetch(&body.image).await {
         Ok(buf) => buf,
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
@@ -84,8 +84,8 @@ async fn invert_endpoint(body: Json<ImageJson>) -> HttpResponse {
 }
 
 #[post("/api/imageops/edges")]
-async fn edges_endpoint(body: Json<ImageJson>) -> HttpResponse {
-    let res = match fetch(&body.image).await {
+async fn edges_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResponse {
+    let res = match fetcher.fetch(&body.image).await {
         Ok(buf) => buf,
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
@@ -115,8 +115,8 @@ async fn edges_endpoint(body: Json<ImageJson>) -> HttpResponse {
 }
 
 #[post("/api/imageops/oil")]
-async fn oil_endpoint(body: Json<ImageJson>) -> HttpResponse {
-    let res = match fetch(&body.image).await {
+async fn oil_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResponse {
+    let res = match fetcher.fetch(&body.image).await {
         Ok(buf) => buf,
         Err(e) => {
             return HttpResponse::UnprocessableEntity()

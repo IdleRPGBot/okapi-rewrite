@@ -1,7 +1,7 @@
 use crate::constants::*;
 use crate::encoder::encode_png;
 use crate::font::draw_text_mut;
-use crate::proxy::fetch;
+use crate::proxy::Fetcher;
 use actix_web::{post, web, HttpResponse};
 use image::io::Reader;
 use image::{imageops::overlay, Rgba};
@@ -34,12 +34,12 @@ struct ProfileJson {
 }
 
 #[post("/api/genprofile")]
-async fn genprofile(body: web::Json<ProfileJson>) -> HttpResponse {
+async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -> HttpResponse {
     let image_url = &body.image;
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
         _ => {
-            let buf = match fetch(&image_url).await {
+            let buf = match fetcher.fetch(&image_url).await {
                 Ok(buf) => buf,
                 Err(e) => {
                     return HttpResponse::UnprocessableEntity()
