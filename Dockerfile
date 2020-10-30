@@ -14,7 +14,7 @@ ARG RUST_TARGET
 
 RUN apk upgrade && \
     apk add curl gcc musl-dev && \
-    curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly -y
+    curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly-2020-10-29 -y
 
 RUN source $HOME/.cargo/env && \
     if [ "$RUST_TARGET" != $(rustup target list --installed) ]; then \
