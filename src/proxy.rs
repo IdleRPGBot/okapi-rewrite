@@ -22,6 +22,18 @@ impl Display for FetchError {
     }
 }
 
+impl From<SendRequestError> for FetchError {
+    fn from(e: SendRequestError) -> FetchError {
+        FetchError::Requesting(e)
+    }
+}
+
+impl From<PayloadError> for FetchError {
+    fn from(e: PayloadError) -> FetchError {
+        FetchError::Payload(e)
+    }
+}
+
 pub struct Fetcher {
     client: Client,
 }
@@ -48,15 +60,11 @@ impl Fetcher {
                 self.client.get(url)
             }
         };
-        match req.timeout(Duration::new(3, 0)).send().await {
-            Ok(mut res) => {
-                let body = res.body().await;
-                match body {
-                    Ok(bytes) => Ok(bytes),
-                    Err(e) => Err(FetchError::Payload(e)),
-                }
-            }
-            Err(e) => Err(FetchError::Requesting(e)),
-        }
+        Ok(req
+            .timeout(Duration::new(3, 0))
+            .send()
+            .await?
+            .body()
+            .await?)
     }
 }
