@@ -6,7 +6,6 @@ use actix_web::{
 };
 use std::env::var;
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::time::Duration;
 
 pub enum FetchError {
     Requesting(SendRequestError),
@@ -51,8 +50,8 @@ impl Fetcher {
 
     pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
         let req = {
-            if let Some(url) = &*PROXY_URL {
-                self.client.get(url).header(
+            if let Some(proxy_url) = &*PROXY_URL {
+                self.client.get(proxy_url).header(
                     HeaderName::from_lowercase(b"requested-uri").unwrap(),
                     HeaderValue::from_str(&url).unwrap(),
                 )
@@ -60,11 +59,6 @@ impl Fetcher {
                 self.client.get(url)
             }
         };
-        Ok(req
-            .timeout(Duration::new(3, 0))
-            .send()
-            .await?
-            .body()
-            .await?)
+        Ok(req.send().await?.body().limit(1024 * 1024).await?)
     }
 }
