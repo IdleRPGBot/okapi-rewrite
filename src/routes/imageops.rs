@@ -1,6 +1,10 @@
 use crate::encoder::encode_png;
 use crate::proxy::Fetcher;
-use actix_web::{post, web::{Data, Json}, HttpResponse};
+use actix_web::{
+    post,
+    web::{Data, Json},
+    HttpResponse,
+};
 use image::{
     imageops::{invert, resize, FilterType},
     load_from_memory, Pixel, Rgba,
