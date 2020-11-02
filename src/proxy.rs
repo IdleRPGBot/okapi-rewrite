@@ -59,6 +59,6 @@ impl Fetcher {
                 self.client.get(url)
             }
         };
-        Ok(req.send().await?.body().limit(1024 * 1024).await?)
+        Ok(req.send().await?.body().limit(1024 * 1024 * 3).await?)
     }
 }
