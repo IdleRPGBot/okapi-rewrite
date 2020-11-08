@@ -177,10 +177,10 @@ async fn oil_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResp
                         let pix = img.get_pixel(idx_x as u32, idx_y as u32).channels();
                         match pixel_intensity_count.get_mut(&(intensity_val as usize)) {
                             Some(val) => {
-                                val.val = val.val + 1;
-                                val.r = val.r + pix[0] as i32;
-                                val.g = val.g + pix[1] as i32;
-                                val.b = val.b + pix[2] as i32;
+                                val.val += 1;
+                                val.r += pix[0] as i32;
+                                val.g += pix[1] as i32;
+                                val.b += pix[2] as i32;
                             }
                             None => {
                                 pixel_intensity_count.insert(

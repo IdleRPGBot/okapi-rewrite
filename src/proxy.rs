@@ -62,3 +62,9 @@ impl Fetcher {
         Ok(req.send().await?.body().limit(1024 * 1024 * 3).await?)
     }
 }
+
+impl Default for Fetcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
