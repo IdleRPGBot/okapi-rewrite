@@ -8,16 +8,7 @@ use std::env::var;
 lazy_static! {
     pub static ref PROXY_URL: Option<String> = var("PROXY_URL").ok();
     pub static ref TRAVITIA_FONT: FontVec =
-        FontVec::try_from_vec(include_bytes!("../assets/fonts/TravMedium.otf").to_vec())
-            .expect("could not load font");
-    pub static ref CAVIAR_DREAMS: FontVec =
-        FontVec::try_from_vec(include_bytes!("../assets/fonts/CaviarDreams.ttf").to_vec())
-            .expect("could not load font");
-    pub static ref OPEN_SANS_EMOJI: FontVec =
-        FontVec::try_from_vec(include_bytes!("../assets/fonts/OpenSansEmoji.ttf").to_vec())
-            .expect("could not load font");
-    pub static ref K_GOTHIC: FontVec =
-        FontVec::try_from_vec(include_bytes!("../assets/fonts/K Gothic.ttf").to_vec())
+        FontVec::try_from_vec(include_bytes!("../assets/fonts/MergedNoKern.otf").to_vec())
             .expect("could not load font");
     pub static ref PROFILE: RgbaImage =
         load_from_memory(include_bytes!("../assets/images/ProfileOverlayNew.png"))
