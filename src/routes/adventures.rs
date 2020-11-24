@@ -1,10 +1,10 @@
 use crate::constants::{ADVENTURES, TRAVITIA_FONT};
 use crate::encoder::encode_png;
+use ab_glyph::PxScale;
 use actix_web::{post, web::Json, HttpResponse};
 use base64::encode;
 use image::Rgb;
 use imageproc::drawing::draw_text_mut;
-use rusttype::Scale;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -22,14 +22,15 @@ async fn genadventures(body: Json<AdventuresJson>) -> HttpResponse {
         let chance_max = &current_chances[1];
         let mut new_image = ADVENTURES[idx].clone();
         let white = Rgb([0u8, 0u8, 0u8]);
-        let scale = Scale { x: 20.0, y: 20.0 };
+        let scale = PxScale { x: 20.0, y: 20.0 };
         draw_text_mut(
             &mut new_image,
             white,
             314,
             148,
             scale,
-            &TRAVITIA_FONT,
+            100,
+            &*TRAVITIA_FONT,
             &format!("{}% to", chance_min),
         );
         draw_text_mut(
@@ -38,7 +39,8 @@ async fn genadventures(body: Json<AdventuresJson>) -> HttpResponse {
             314,
             168,
             scale,
-            &TRAVITIA_FONT,
+            100,
+            &*TRAVITIA_FONT,
             &format!("{}%", chance_max),
         );
         let buf = encode_png(&new_image).expect("encoding PNG failed");

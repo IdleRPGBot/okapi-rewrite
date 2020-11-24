@@ -39,7 +39,7 @@ async fn pixelate(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResponse
         }
     };
     let img = match load_from_memory(&res) {
-        Ok(data) => data.to_rgba(),
+        Ok(data) => data.to_rgba8(),
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
                 .content_type("application/json")
@@ -70,7 +70,7 @@ async fn invert_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpR
         }
     };
     let mut img = match load_from_memory(&res) {
-        Ok(data) => data.to_rgba(),
+        Ok(data) => data.to_rgba8(),
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
                 .content_type("application/json")
@@ -101,7 +101,7 @@ async fn edges_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpRe
         }
     };
     let img = match load_from_memory(&res) {
-        Ok(data) => data.to_luma(),
+        Ok(data) => data.to_luma8(),
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
                 .content_type("application/json")
@@ -132,7 +132,7 @@ async fn oil_endpoint(body: Json<ImageJson>, fetcher: Data<Fetcher>) -> HttpResp
         }
     };
     let img = match load_from_memory(&res) {
-        Ok(data) => data.to_rgba(),
+        Ok(data) => data.to_rgba8(),
         Err(e) => {
             return HttpResponse::UnprocessableEntity()
                 .content_type("application/json")

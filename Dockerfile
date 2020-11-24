@@ -43,6 +43,7 @@ RUN source $HOME/.cargo/env && \
 
 RUN rm -f target/$RUST_TARGET/release/deps/okapi*
 COPY ./src ./src
+COPY ./assets ./assets
 
 RUN source $HOME/.cargo/env && \
     cargo build --release \
@@ -55,6 +56,5 @@ FROM docker.io/${FINAL_TARGET}/alpine:edge
 WORKDIR /okapi
 
 COPY --from=builder /okapi /usr/bin/okapi
-COPY assets /okapi/assets
 
 CMD /usr/bin/okapi

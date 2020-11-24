@@ -65,7 +65,7 @@ async fn genoverlay(body: Json<OverlayJson>, fetcher: Data<Fetcher>) -> HttpResp
         .unwrap()
         .decode()
         .unwrap()
-        .to_rgba();
+        .to_rgba8();
     // Lanczos3 is best, but has slow speed
     let mut img = resize(&img, 800, 650, FilterType::Lanczos3);
     overlay(&mut img, &PROFILE.clone(), 0, 0);

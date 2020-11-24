@@ -1,12 +1,11 @@
 use crate::constants::*;
 use crate::encoder::encode_png;
-use crate::font::draw_text_mut;
 use crate::proxy::Fetcher;
+use ab_glyph::PxScale;
 use actix_web::{post, web, HttpResponse};
 use image::io::Reader;
 use image::{imageops::overlay, Rgba};
-use imageproc::drawing::Blend;
-use rusttype::Scale;
+use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
 use serde_json::value::Number;
 use std::io::Cursor;
@@ -85,7 +84,7 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
                 .unwrap()
                 .decode()
                 .unwrap()
-                .to_rgba()
+                .to_rgba8()
         }
     };
     overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
@@ -105,16 +104,16 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
     let a = (body.color[3].as_f64().expect("A value should be f64") * 255.0) as u8;
     let color = Rgba([r, g, b, a]);
     // Font size
-    let mut scale = Scale { x: 26.0, y: 26.0 };
+    let mut scale = PxScale { x: 26.0, y: 26.0 };
     draw_text_mut(
         &mut blend,
         color,
         221,
         143,
         scale,
-        &TRAVITIA_FONT,
-        &body.name,
         130,
+        &*TRAVITIA_FONT,
+        &body.name,
     );
     draw_text_mut(
         &mut blend,
@@ -122,20 +121,20 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         228,
         185,
         scale,
-        &TRAVITIA_FONT,
-        &body.race,
         130,
+        &*TRAVITIA_FONT,
+        &body.race,
     );
-    scale = Scale { x: 23.0, y: 23.0 };
+    scale = PxScale { x: 23.0, y: 23.0 };
     draw_text_mut(
         &mut blend,
         color,
         228,
         235,
         scale,
-        &TRAVITIA_FONT,
-        &body.classes[0],
         130,
+        &*TRAVITIA_FONT,
+        &body.classes[0],
     );
     draw_text_mut(
         &mut blend,
@@ -143,20 +142,20 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         228,
         259,
         scale,
-        &TRAVITIA_FONT,
-        &body.classes[1],
         130,
+        &*TRAVITIA_FONT,
+        &body.classes[1],
     );
-    scale = Scale { x: 15.0, y: 22.0 };
+    scale = PxScale { x: 15.0, y: 22.0 };
     draw_text_mut(
         &mut blend,
         color,
         111,
         295,
         scale,
-        &TRAVITIA_FONT,
+        95,
+        &*TRAVITIA_FONT,
         &body.damage,
-        95,
     );
     draw_text_mut(
         &mut blend,
@@ -164,20 +163,20 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         111,
         337,
         scale,
-        &TRAVITIA_FONT,
-        &body.defense,
         95,
+        &*TRAVITIA_FONT,
+        &body.defense,
     );
-    scale = Scale { x: 22.0, y: 22.0 };
+    scale = PxScale { x: 22.0, y: 22.0 };
     draw_text_mut(
         &mut blend,
         color,
         284,
         295,
         scale,
-        &TRAVITIA_FONT,
-        &body.level,
         60,
+        &*TRAVITIA_FONT,
+        &body.level,
     );
     draw_text_mut(
         &mut blend,
@@ -185,24 +184,24 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         284,
         337,
         scale,
-        &TRAVITIA_FONT,
-        "soon™",
         60,
+        &*TRAVITIA_FONT,
+        "soon™",
     );
     if body.sword_name.len() < 18 {
-        scale = Scale { x: 35.0, y: 45.0 };
+        scale = PxScale { x: 35.0, y: 45.0 };
         draw_text_mut(
             &mut blend,
             color,
             165,
             495,
             scale,
-            &TRAVITIA_FONT,
-            &body.sword_name,
             200,
+            &*TRAVITIA_FONT,
+            &body.sword_name,
         );
     } else {
-        scale = Scale { x: 19.0, y: 19.0 };
+        scale = PxScale { x: 19.0, y: 19.0 };
         let rows = wrap(&body.sword_name, 26);
         for (i, line) in rows.iter().enumerate() {
             draw_text_mut(
@@ -211,26 +210,26 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
                 165,
                 495 + ((i as u32) * 20),
                 scale,
-                &TRAVITIA_FONT,
-                &line,
                 200,
+                &*TRAVITIA_FONT,
+                &line,
             );
         }
     }
     if body.shield_name.len() < 18 {
-        scale = Scale { x: 35.0, y: 45.0 };
+        scale = PxScale { x: 35.0, y: 45.0 };
         draw_text_mut(
             &mut blend,
             color,
             165,
             574,
             scale,
-            &TRAVITIA_FONT,
-            &body.shield_name,
             200,
+            &*TRAVITIA_FONT,
+            &body.shield_name,
         );
     } else {
-        scale = Scale { x: 19.0, y: 19.0 };
+        scale = PxScale { x: 19.0, y: 19.0 };
         let rows = wrap(&body.shield_name, 26);
         for (i, line) in rows.iter().enumerate() {
             draw_text_mut(
@@ -239,22 +238,22 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
                 165,
                 574 + ((i as u32) * 20),
                 scale,
-                &TRAVITIA_FONT,
-                &line,
                 200,
+                &*TRAVITIA_FONT,
+                &line,
             );
         }
     }
-    scale = Scale { x: 52.0, y: 52.0 };
+    scale = PxScale { x: 52.0, y: 52.0 };
     draw_text_mut(
         &mut blend,
         color,
         519,
         49,
         scale,
-        &TRAVITIA_FONT,
-        &body.money,
         231,
+        &*TRAVITIA_FONT,
+        &body.money,
     );
     draw_text_mut(
         &mut blend,
@@ -262,9 +261,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         519,
         121,
         scale,
-        &TRAVITIA_FONT,
-        "soon™",
         231,
+        &*TRAVITIA_FONT,
+        "soon™",
     );
     draw_text_mut(
         &mut blend,
@@ -272,9 +271,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         519,
         204,
         scale,
-        &TRAVITIA_FONT,
-        &body.god,
         231,
+        &*TRAVITIA_FONT,
+        &body.god,
     );
     draw_text_mut(
         &mut blend,
@@ -282,9 +281,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         519,
         288,
         scale,
-        &TRAVITIA_FONT,
-        &body.guild,
         231,
+        &*TRAVITIA_FONT,
+        &body.guild,
     );
     draw_text_mut(
         &mut blend,
@@ -292,9 +291,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         519,
         379,
         scale,
-        &TRAVITIA_FONT,
-        &body.marriage,
         231,
+        &*TRAVITIA_FONT,
+        &body.marriage,
     );
     draw_text_mut(
         &mut blend,
@@ -302,25 +301,25 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         519,
         459,
         scale,
-        &TRAVITIA_FONT,
-        &body.pvp_wins,
         231,
+        &*TRAVITIA_FONT,
+        &body.pvp_wins,
     );
     let mut adv = body.adventure.as_str().lines();
     let line_1 = adv.next().unwrap();
     // Is there a second line?
     match adv.next() {
         Some(line_2) => {
-            scale = Scale { x: 34.0, y: 34.0 };
+            scale = PxScale { x: 34.0, y: 34.0 };
             draw_text_mut(
                 &mut blend,
                 color,
                 519,
                 538,
                 scale,
-                &TRAVITIA_FONT,
-                line_1,
                 231,
+                &*TRAVITIA_FONT,
+                line_1,
             );
             draw_text_mut(
                 &mut blend,
@@ -328,9 +327,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
                 519,
                 576,
                 scale,
-                &TRAVITIA_FONT,
-                line_2,
                 231,
+                &*TRAVITIA_FONT,
+                line_2,
             );
         }
         None => {
@@ -340,9 +339,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
                 519,
                 545,
                 scale,
-                &TRAVITIA_FONT,
-                line_1,
                 231,
+                &*TRAVITIA_FONT,
+                line_1,
             );
         }
     }
