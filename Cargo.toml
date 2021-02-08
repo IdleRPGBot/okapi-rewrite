@@ -10,10 +10,8 @@ actix-web = { version = "4.0.0-beta.1", default_features = false, features = [
     "rustls"
 ] }
 base64 = "0.13"
-conv = "0.3"
 env_logger = { version = "0.8", default-features = false, features = ["termcolor", "atty", "humantime"] }
 image = { version = "0.23", default_features = false, features = [
-    "gif",
     "jpeg",
     "png",
     "webp"
@@ -26,6 +24,19 @@ serde_json = "1.0"
 textwrap = "0.13"
 tiny-skia = "0.4"
 usvg = { version = "0.13", default_features = false }
+
+[patch.crates-io]
+awc = { git = "https://github.com/actix/actix-web", branch = "master" }
+actix-codec = { git = "https://github.com/actix/actix-net", branch = "master" }
+actix-http = { git = "https://github.com/actix/actix-web", branch = "master" }
+actix-web = { git = "https://github.com/actix/actix-web", branch = "master" }
+actix-web-codegen = { git = "https://github.com/actix/actix-web", branch = "master" }
+actix-server = { git = "https://github.com/actix/actix-net", branch = "master" }
+actix-service = { git = "https://github.com/actix/actix-net", branch = "master" }
+actix-utils = { git = "https://github.com/actix/actix-net", branch = "master" }
+actix-tls = { git = "https://github.com/actix/actix-net", branch = "master" }
+actix-router = { git = "https://github.com/actix/actix-net", branch = "master" }
+cookie = { git = "https://github.com/Gelbpunkt/cookie-rs", branch = "master" }
 
 [profile.release]
 codegen-units = 1

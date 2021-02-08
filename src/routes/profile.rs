@@ -1,10 +1,7 @@
-use crate::constants::*;
-use crate::encoder::encode_png;
-use crate::proxy::Fetcher;
+use crate::{constants::*, encoder::encode_png, proxy::Fetcher};
 use ab_glyph::PxScale;
 use actix_web::{post, web, HttpResponse};
-use image::io::Reader;
-use image::{imageops::overlay, Rgba};
+use image::{imageops::overlay, io::Reader, Rgba};
 use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
 use serde_json::value::Number;

@@ -1,5 +1,4 @@
-use crate::encoder::encode_png;
-use crate::proxy::Fetcher;
+use crate::{encoder::encode_png, proxy::Fetcher};
 use actix_web::{
     post,
     web::{Data, Json},

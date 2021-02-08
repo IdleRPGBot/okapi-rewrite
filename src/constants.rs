@@ -1,9 +1,10 @@
 use ab_glyph::FontVec;
-use image::imageops::{resize, FilterType};
-use image::{load_from_memory, RgbImage, RgbaImage};
+use image::{
+    imageops::{resize, FilterType},
+    load_from_memory, RgbImage, RgbaImage,
+};
 use lazy_static::lazy_static;
-use std::collections::HashMap;
-use std::env::var;
+use std::{collections::HashMap, env::var};
 
 lazy_static! {
     pub static ref PROXY_URL: Option<String> = var("PROXY_URL").ok();

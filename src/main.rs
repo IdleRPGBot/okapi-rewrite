@@ -2,8 +2,10 @@ use actix_web::{
     error::{Error, InternalError, JsonPayloadError},
     middleware, web, App, HttpRequest, HttpResponse, HttpServer,
 };
-use std::env::{set_var, var};
-use std::io::Result as IoResult;
+use std::{
+    env::{set_var, var},
+    io::Result as IoResult,
+};
 
 pub mod constants;
 pub mod encoder;

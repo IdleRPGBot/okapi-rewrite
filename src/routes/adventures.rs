@@ -1,5 +1,7 @@
-use crate::constants::{ADVENTURES, TRAVITIA_FONT};
-use crate::encoder::encode_png;
+use crate::{
+    constants::{ADVENTURES, TRAVITIA_FONT},
+    encoder::encode_png,
+};
 use ab_glyph::PxScale;
 use actix_web::{post, web::Json, HttpResponse};
 use base64::encode;

@@ -4,8 +4,10 @@ use actix_web::{
     http::{HeaderName, HeaderValue},
     web::Bytes,
 };
-use std::env::var;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::{
+    env::var,
+    fmt::{Display, Formatter, Result as FmtResult},
+};
 
 pub enum FetchError {
     Requesting(SendRequestError),
@@ -51,10 +53,10 @@ impl Fetcher {
     pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
         let req = {
             if let Some(proxy_url) = &*PROXY_URL {
-                self.client.get(proxy_url).header(
+                self.client.get(proxy_url).insert_header((
                     HeaderName::from_lowercase(b"requested-uri").unwrap(),
                     HeaderValue::from_str(&url).unwrap(),
-                )
+                ))
             } else {
                 self.client.get(url)
             }

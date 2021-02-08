@@ -1,14 +1,14 @@
-use crate::constants::PROFILE;
-use crate::encoder::encode_png;
-use crate::proxy::Fetcher;
+use crate::{constants::PROFILE, encoder::encode_png, proxy::Fetcher};
 use actix_web::{
     post,
     web::{Data, Json},
     HttpResponse,
 };
 use base64::encode;
-use image::imageops::{overlay, resize, FilterType};
-use image::io::Reader;
+use image::{
+    imageops::{overlay, resize, FilterType},
+    io::Reader,
+};
 use serde::Deserialize;
 use std::io::Cursor;
 
