@@ -4,7 +4,6 @@ use actix_web::{post, web, HttpResponse};
 use image::{imageops::overlay, io::Reader, Rgba};
 use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
-use serde_json::value::Number;
 use std::io::Cursor;
 use textwrap::wrap;
 
@@ -13,7 +12,7 @@ struct ProfileJson {
     name: String,
     image: String,
     race: String,
-    color: Vec<Number>,   // RGBA array
+    color: (u8, u8, u8, f32), // RGBA
     classes: Vec<String>, // Array of Strings
     damage: String,
     defense: String,
@@ -95,10 +94,10 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
     }
     let mut blend = Blend(img);
     // I think unwrapping here is legitimate
-    let r = body.color[0].as_u64().expect("R value should be u64") as u8;
-    let g = body.color[1].as_u64().expect("G value should be u64") as u8;
-    let b = body.color[2].as_u64().expect("B value should be u64") as u8;
-    let a = (body.color[3].as_f64().expect("A value should be f64") * 255.0) as u8;
+    let r = body.color.0;
+    let g = body.color.1;
+    let b = body.color.2;
+    let a = (body.color.3 * 255.0) as u8;
     let color = Rgba([r, g, b, a]);
     // Font size
     let mut scale = PxScale { x: 26.0, y: 26.0 };

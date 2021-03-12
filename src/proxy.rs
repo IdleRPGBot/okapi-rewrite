@@ -1,8 +1,11 @@
 use crate::constants::PROXY_URL;
 use actix_web::{
-    client::{Client, ClientBuilder, PayloadError, SendRequestError},
     http::{HeaderName, HeaderValue},
     web::Bytes,
+};
+use awc::{
+    error::{PayloadError, SendRequestError},
+    Client, ClientBuilder,
 };
 use std::{
     env::var,
