@@ -13,7 +13,7 @@ struct ProfileJson {
     image: String,
     race: String,
     color: (u8, u8, u8, f32), // RGBA
-    classes: Vec<String>, // Array of Strings
+    classes: Vec<String>,     // Array of Strings
     damage: String,
     defense: String,
     sword_name: String,
