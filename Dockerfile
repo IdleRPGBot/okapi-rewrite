@@ -2,11 +2,9 @@
 ARG RUST_TARGET="x86_64-unknown-linux-musl"
 # Musl target, either x86_64-linux-musl, aarch64-linux-musl, arm-linux-musleabi, etc.
 ARG MUSL_TARGET="x86_64-linux-musl"
-# This ONLY works with defaults which is rather annoying
-# but better than nothing
-# Uses docker's own naming for architectures
-# e.g. x86_64 -> amd64, aarch64 -> arm64v8, arm -> arm32v7
-ARG FINAL_TARGET="amd64"
+# Final architecture used by Alpine
+# Uses Kernel Naming (aarch64, armv7, x86_64, s390x, ppc64le)
+ARG FINAL_TARGET="x86_64"
 
 FROM docker.io/library/alpine:edge AS builder
 ARG MUSL_TARGET
@@ -51,10 +49,21 @@ RUN source $HOME/.cargo/env && \
     cp target/$RUST_TARGET/release/okapi /okapi && \
     actual-strip /okapi
 
-FROM docker.io/${FINAL_TARGET}/alpine:edge
+FROM docker.io/library/alpine:edge AS dumb-init
+ARG FINAL_TARGET
 
-WORKDIR /okapi
+RUN apk update && \
+    VERSION=$(apk search dumb-init) && \
+    mkdir out && \
+    cd out && \
+    wget "https://dl-cdn.alpinelinux.org/alpine/edge/community/$FINAL_TARGET/$VERSION.apk" -O dumb-init.apk && \
+    tar xf dumb-init.apk && \
+    mv usr/bin/dumb-init /dumb-init
 
-COPY --from=builder /okapi /usr/bin/okapi
+FROM scratch
 
-CMD /usr/bin/okapi
+COPY --from=dumb-init /dumb-init /dumb-init
+COPY --from=builder /okapi /okapi
+
+ENTRYPOINT ["./dumb-init", "--"]
+CMD ["./okapi"]
