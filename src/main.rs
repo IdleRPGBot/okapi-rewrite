@@ -1,7 +1,7 @@
 use bytes::Buf;
 use hyper::{
     service::{make_service_fn, service_fn},
-    Body, Error, Method, Request, Response, Server,
+    Body, Error, Method, Request, Response, Server, StatusCode,
 };
 use log::{error, info};
 use routes::{
@@ -33,31 +33,46 @@ async fn handle(req: Request<Body>, fetcher: Arc<proxy::Fetcher>) -> Result<Resp
     let body = hyper::body::aggregate(req).await?;
     let reader = body.reader();
 
-    let resp = match (&method, path.as_str()) {
-        (&Method::POST, "/api/genadventures") => {
-            genadventures(serde_json::from_reader(reader).unwrap())
+    let res: Result<Response<Body>, serde_json::Error> = async {
+        match (&method, path.as_str()) {
+            (&Method::POST, "/api/genadventures") => {
+                Ok(genadventures(serde_json::from_reader(reader)?))
+            }
+            (&Method::POST, "/api/genchess") => Ok(genchess(serde_json::from_reader(reader)?)),
+            (&Method::POST, "/api/imageops/pixel") => {
+                Ok(pixelate(serde_json::from_reader(reader)?, fetcher).await)
+            }
+            (&Method::POST, "/api/imageops/invert") => {
+                Ok(invert_endpoint(serde_json::from_reader(reader)?, fetcher).await)
+            }
+            (&Method::POST, "/api/imageops/edges") => {
+                Ok(edges_endpoint(serde_json::from_reader(reader)?, fetcher).await)
+            }
+            (&Method::POST, "/api/imageops/oil") => {
+                Ok(oil_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await)
+            }
+            (&Method::GET, "/") => Ok(index()),
+            (&Method::POST, "/api/genoverlay") => {
+                Ok(genoverlay(serde_json::from_reader(reader)?, fetcher).await)
+            }
+            (&Method::POST, "/api/genprofile") => {
+                Ok(genprofile(serde_json::from_reader(reader)?, fetcher).await)
+            }
+            _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
         }
-        (&Method::POST, "/api/genchess") => genchess(serde_json::from_reader(reader).unwrap()),
-        (&Method::POST, "/api/imageops/pixel") => {
-            pixelate(serde_json::from_reader(reader).unwrap(), fetcher).await
-        }
-        (&Method::POST, "/api/imageops/invert") => {
-            invert_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await
-        }
-        (&Method::POST, "/api/imageops/edges") => {
-            edges_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await
-        }
-        (&Method::POST, "/api/imageops/oil") => {
-            oil_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await
-        }
-        (&Method::GET, "/") => index(),
-        (&Method::POST, "/api/genoverlay") => {
-            genoverlay(serde_json::from_reader(reader).unwrap(), fetcher).await
-        }
-        (&Method::POST, "/api/genprofile") => {
-            genprofile(serde_json::from_reader(reader).unwrap(), fetcher).await
-        }
-        _ => Response::builder().status(404).body(Body::empty()).unwrap(),
+    }
+    .await;
+
+    let resp = match res {
+        Ok(r) => r,
+        Err(e) => Response::builder()
+            .status(StatusCode::UNPROCESSABLE_ENTITY)
+            .header("content-type", "application/json")
+            .body(Body::from(format!(
+                "{{\"status\": \"error\", \"detail\": \"{}\"}}",
+                e
+            )))
+            .unwrap(),
     };
 
     let end = Instant::now();
