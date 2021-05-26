@@ -3,19 +3,19 @@ use crate::{
     encoder::encode_png,
 };
 use ab_glyph::PxScale;
-use actix_web::{post, web::Json, HttpResponse};
 use base64::encode;
+use hyper::{Body, Response};
 use image::Rgb;
 use imageproc::drawing::draw_text_mut;
 use serde::Deserialize;
+use serde_json::to_string;
 
 #[derive(Deserialize)]
-struct AdventuresJson {
+pub struct AdventuresJson {
     percentages: Vec<Vec<i32>>,
 }
 
-#[post("/api/genadventures")]
-async fn genadventures(body: Json<AdventuresJson>) -> HttpResponse {
+pub fn genadventures(body: AdventuresJson) -> Response<Body> {
     // body is the parsed JSON
     let mut images = Vec::new();
     for idx in 0..30 {
@@ -48,5 +48,9 @@ async fn genadventures(body: Json<AdventuresJson>) -> HttpResponse {
         let buf = encode_png(&new_image).expect("encoding PNG failed");
         images.push(format!("data:image/png;base64,{}", encode(&buf)))
     }
-    HttpResponse::Ok().json(images)
+    Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(Body::from(to_string(&images).unwrap()))
+        .unwrap()
 }

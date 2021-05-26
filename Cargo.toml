@@ -6,22 +6,26 @@ edition = "2018"
 
 [dependencies]
 ab_glyph = "0.2"
-actix-web = { version = "4.0.0-beta.6", default_features = false }
-awc = { version = "3.0.0-beta.5", default-features = false, features = ["rustls"] }
 base64 = "0.13"
+bytes = "1.0"
 env_logger = { version = "0.8", default-features = false, features = ["termcolor", "atty", "humantime"] }
-image = { version = "0.23", default_features = false, features = [
+hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
+hyper-rustls = { version = "0.22", default-features = false, features = ["webpki-tokio"] }
+image = { version = "0.23", default-features = false, features = [
     "jpeg",
     "png",
     "webp"
 ] }
 imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
 lazy_static = "1.4"
-resvg = { version = "0.14", default_features = false }
+log = "0.4"
+resvg = { version = "0.14", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 textwrap = "0.13"
+tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread"] }
 tiny-skia = "0.5"
-usvg = { version = "0.14", default_features = false }
+usvg = { version = "0.14", default-features = false }
 
 [profile.release]
 codegen-units = 1

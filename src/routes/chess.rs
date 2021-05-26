@@ -1,5 +1,5 @@
 use crate::encoder::encode_png;
-use actix_web::{post, web::Json, HttpResponse};
+use hyper::{Body, Response, StatusCode};
 use image::RgbaImage;
 use resvg::render;
 use serde::Deserialize;
@@ -7,22 +7,23 @@ use tiny_skia::Pixmap;
 use usvg::{FitTo, Tree};
 
 #[derive(Deserialize)]
-struct ChessJson {
+pub struct ChessJson {
     xml: String, // SVG
 }
 
-#[post("/api/genchess")]
-async fn genchess(body: Json<ChessJson>) -> HttpResponse {
+pub fn genchess(body: ChessJson) -> Response<Body> {
     let xml = &body.xml;
     let tree = match Tree::from_str(&xml, &usvg::Options::default()) {
         Ok(tree) => tree,
         Err(e) => {
-            return HttpResponse::UnprocessableEntity()
-                .content_type("application/json")
-                .body(format!(
-                "{{\"status\": \"error\", \"reason\": \"invalid SVG data\", \"detail\": \"{}\"}}",
-                e
-            ))
+            return Response::builder()
+                .status(StatusCode::UNPROCESSABLE_ENTITY)
+                .header("content-type", "application/json")
+                .body(Body::from(format!(
+                    "{{\"status\": \"error\", \"reason\": \"invalid SVG data\", \"detail\": \"{}\"}}",
+                    e
+                )))
+                .unwrap();
         }
     };
     let mut map = Pixmap::new(390, 390).unwrap();
@@ -30,7 +31,9 @@ async fn genchess(body: Json<ChessJson>) -> HttpResponse {
     let vect = map.take();
     let image = RgbaImage::from_raw(390, 390, vect).unwrap();
     let final_image = encode_png(&image).expect("encoding PNG failed");
-    HttpResponse::Ok()
-        .content_type("image/png")
-        .body(final_image)
+    Response::builder()
+        .status(200)
+        .header("content-type", "image/png")
+        .body(Body::from(final_image))
+        .unwrap()
 }

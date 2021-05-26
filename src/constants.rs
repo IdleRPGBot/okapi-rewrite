@@ -1,13 +1,16 @@
 use ab_glyph::FontVec;
+use hyper::Uri;
 use image::{
     imageops::{resize, FilterType},
     load_from_memory, RgbImage, RgbaImage,
 };
 use lazy_static::lazy_static;
-use std::{collections::HashMap, env::var};
+use std::{collections::HashMap, env::var, str::FromStr};
 
 lazy_static! {
-    pub static ref PROXY_URL: Option<String> = var("PROXY_URL").ok();
+    pub static ref PROXY_URL: Option<Uri> =
+        var("PROXY_URL").ok().map(|p| Uri::from_str(&p).unwrap());
+    pub static ref PROXY_AUTH: Option<String> = var("PROXY_AUTH").ok();
     pub static ref TRAVITIA_FONT: FontVec =
         FontVec::try_from_vec(include_bytes!("../assets/fonts/MergedNoKern.otf").to_vec())
             .expect("could not load font");

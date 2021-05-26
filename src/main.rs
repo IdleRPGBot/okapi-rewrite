@@ -1,10 +1,24 @@
-use actix_web::{
-    error::{Error, InternalError, JsonPayloadError},
-    middleware, web, App, HttpRequest, HttpResponse, HttpServer,
+use bytes::Buf;
+use hyper::{
+    service::{make_service_fn, service_fn},
+    Body, Error, Method, Request, Response, Server,
 };
+use log::{error, info};
+use routes::{
+    adventures::genadventures,
+    chess::genchess,
+    imageops::{edges_endpoint, invert_endpoint, oil_endpoint, pixelate},
+    index::index,
+    overlay::genoverlay,
+    profile::genprofile,
+};
+
 use std::{
+    convert::Infallible,
     env::{set_var, var},
-    io::Result as IoResult,
+    net::SocketAddr,
+    sync::Arc,
+    time::Instant,
 };
 
 pub mod constants;
@@ -12,59 +26,68 @@ pub mod encoder;
 pub mod proxy;
 pub mod routes;
 
-/// Return either a 400 or 415, and include the error message from serde
-/// in the response body
-fn json_error_handler(err: JsonPayloadError, _req: &HttpRequest) -> Error {
-    let detail = format!(
-        "{{\"status\": \"error\", \"detail\": {:?}}}",
-        err.to_string()
-    );
-    let response = match &err {
-        JsonPayloadError::ContentType => HttpResponse::UnsupportedMediaType()
-            .content_type("application/json")
-            .body(detail),
-        JsonPayloadError::Deserialize(json_err) if json_err.is_data() => {
-            HttpResponse::UnprocessableEntity()
-                .content_type("application/json")
-                .body(detail)
+async fn handle(req: Request<Body>, fetcher: Arc<proxy::Fetcher>) -> Result<Response<Body>, Error> {
+    let start = Instant::now();
+    let path = req.uri().path().to_owned();
+    let method = req.method().to_owned();
+    let body = hyper::body::aggregate(req).await?;
+    let reader = body.reader();
+
+    let resp = match (&method, path.as_str()) {
+        (&Method::POST, "/api/genadventures") => {
+            genadventures(serde_json::from_reader(reader).unwrap())
         }
-        _ => HttpResponse::BadRequest()
-            .content_type("application/json")
-            .body(detail),
+        (&Method::POST, "/api/genchess") => genchess(serde_json::from_reader(reader).unwrap()),
+        (&Method::POST, "/api/imageops/pixel") => {
+            pixelate(serde_json::from_reader(reader).unwrap(), fetcher).await
+        }
+        (&Method::POST, "/api/imageops/invert") => {
+            invert_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await
+        }
+        (&Method::POST, "/api/imageops/edges") => {
+            edges_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await
+        }
+        (&Method::POST, "/api/imageops/oil") => {
+            oil_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await
+        }
+        (&Method::GET, "/") => index(),
+        (&Method::POST, "/api/genoverlay") => {
+            genoverlay(serde_json::from_reader(reader).unwrap(), fetcher).await
+        }
+        (&Method::POST, "/api/genprofile") => {
+            genprofile(serde_json::from_reader(reader).unwrap(), fetcher).await
+        }
+        _ => Response::builder().status(404).body(Body::empty()).unwrap(),
     };
-    InternalError::from_response(err, response.into()).into()
+
+    let end = Instant::now();
+
+    info!("{} {} {} {:?}", method, path, resp.status(), end - start);
+
+    Ok(resp)
 }
 
-#[actix_web::main]
-async fn main() -> IoResult<()> {
-    set_var("RUST_LOG", "actix_web=debug,actix_server=info");
+#[tokio::main]
+async fn main() {
+    set_var("RUST_LOG", "info");
     env_logger::init();
     let listen_address = match var("PORT") {
-        Ok(p) => format!("0.0.0.0:{}", p),
-        Err(_) => "0.0.0.0:3000".to_string(),
+        Ok(p) => SocketAddr::from(([0, 0, 0, 0], p.parse().unwrap())),
+        Err(_) => SocketAddr::from(([0, 0, 0, 0], 3000)),
     };
 
-    HttpServer::new(|| {
-        let client = proxy::Fetcher::new();
-        App::new()
-            .wrap(middleware::Logger::default())
-            .app_data(
-                web::JsonConfig::default()
-                    .limit(65536)
-                    .error_handler(json_error_handler),
-            )
-            .data(client)
-            .service(routes::index::index)
-            .service(routes::adventures::genadventures)
-            .service(routes::chess::genchess)
-            .service(routes::overlay::genoverlay)
-            .service(routes::profile::genprofile)
-            .service(routes::imageops::pixelate)
-            .service(routes::imageops::invert_endpoint)
-            .service(routes::imageops::edges_endpoint)
-            .service(routes::imageops::oil_endpoint)
-    })
-    .bind(listen_address)?
-    .run()
-    .await
+    let client = Arc::new(proxy::Fetcher::new());
+
+    let make_service = make_service_fn(|_conn| {
+        let client = client.clone();
+        async { Ok::<_, Infallible>(service_fn(move |req| handle(req, client.clone()))) }
+    });
+
+    let server = Server::bind(&listen_address).serve(make_service);
+
+    info!("okapi starting on {}", listen_address);
+
+    if let Err(e) = server.await {
+        error!("Server error: {}", e);
+    }
 }

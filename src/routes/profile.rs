@@ -1,14 +1,14 @@
 use crate::{constants::*, encoder::encode_png, proxy::Fetcher};
 use ab_glyph::PxScale;
-use actix_web::{post, web, HttpResponse};
+use hyper::{Body, Response, StatusCode};
 use image::{imageops::overlay, io::Reader, Rgba};
 use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
-use std::io::Cursor;
+use std::{io::Cursor, sync::Arc};
 use textwrap::wrap;
 
 #[derive(Deserialize)]
-struct ProfileJson {
+pub struct ProfileJson {
     name: String,
     image: String,
     race: String,
@@ -28,8 +28,7 @@ struct ProfileJson {
     icons: Vec<String>, // Array of Strings
 }
 
-#[post("/api/genprofile")]
-async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -> HttpResponse {
+pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Body> {
     let image_url = &body.image;
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
@@ -37,46 +36,56 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
             let buf = match fetcher.fetch(&image_url).await {
                 Ok(buf) => buf,
                 Err(e) => {
-                    return HttpResponse::UnprocessableEntity()
-                        .content_type("application/json")
-                        .body(format!(
+                    return Response::builder()
+                        .status(StatusCode::UNPROCESSABLE_ENTITY)
+                        .header("content-type", "application/json")
+                        .body(Body::from(format!(
                             "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
                             e
-                        ))
+                        )))
+                        .unwrap()
                 }
             };
             let b = Cursor::new(buf.clone());
             let reader = match Reader::new(b).with_guessed_format() {
                 Ok(r) => r,
                 Err(e) => {
-                    return HttpResponse::UnprocessableEntity()
-                        .content_type("application/json")
-                        .body(format!(
-                        "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
-                        e
-                    ))
+                    return Response::builder()
+                        .status(StatusCode::UNPROCESSABLE_ENTITY)
+                        .header("content-type", "application/json")
+                        .body(Body::from(format!(
+                            "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                            e
+                        )))
+                        .unwrap()
                 }
             };
             let dimensions = match reader.into_dimensions() {
                 Ok(d) => d,
                 Err(e) => {
-                    return HttpResponse::UnprocessableEntity()
-                        .content_type("application/json")
-                        .body(format!(
+                    return Response::builder()
+                        .status(StatusCode::UNPROCESSABLE_ENTITY)
+                        .header("content-type", "application/json")
+                        .body(Body::from(format!(
                             "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
                             e
-                        ))
+                        )))
+                        .unwrap()
                 }
             };
             if dimensions.0 > 2000 || dimensions.1 > 2000 {
-                return HttpResponse::UnprocessableEntity()
-                    .content_type("application/json")
-                    .body("{\"status\": \"error\", \"reason\": \"image too large\", \"detail\": \"the image file exceeds the size of 2000 pixels in at least one axis\"}");
+                return Response::builder()
+                    .status(StatusCode::UNPROCESSABLE_ENTITY)
+                    .header("content-type", "application/json")
+                    .body(Body::from("{{\"status\": \"error\", \"reason\": \"image too large\", \"detail\": \"the image file exceeds the size of 2000 pixels in at least one axis\"}}"))
+                    .unwrap();
             }
             if dimensions.0 < 800 || dimensions.1 < 650 {
-                return HttpResponse::UnprocessableEntity()
-                    .content_type("application/json")
-                    .body("{\"status\": \"error\", \"reason\": \"image too small\", \"detail\": \"the image file needs to be at least 800x650px in size\"}");
+                return Response::builder()
+                    .status(StatusCode::UNPROCESSABLE_ENTITY)
+                    .header("content-type", "application/json")
+                    .body(Body::from("{{\"status\": \"error\", \"reason\": \"image too small\", \"detail\": \"the image file needs to be at least 800x650px in size\"}}"))
+                    .unwrap();
             }
             // We can also happily unwrap here because it is the same data
             let c = Cursor::new(buf);
@@ -347,7 +356,9 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
         }
     }
     let final_image = encode_png(&blend.0).expect("encoding PNG failed");
-    HttpResponse::Ok()
-        .content_type("image/png")
-        .body(final_image)
+    Response::builder()
+        .status(200)
+        .header("content-type", "image/png")
+        .body(Body::from(final_image))
+        .unwrap()
 }

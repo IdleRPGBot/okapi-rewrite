@@ -1,70 +1,69 @@
-use crate::constants::PROXY_URL;
-use actix_web::{
-    http::{HeaderName, HeaderValue},
-    web::Bytes,
+use crate::constants::{PROXY_AUTH, PROXY_URL};
+use bytes::Bytes;
+use hyper::{
+    body::{to_bytes, HttpBody},
+    client::HttpConnector,
+    Body, Client, Error, Request, Uri,
 };
-use awc::{
-    error::{PayloadError, SendRequestError},
-    Client, ClientBuilder,
-};
+use hyper_rustls::HttpsConnector;
 use std::{
-    env::var,
     fmt::{Display, Formatter, Result as FmtResult},
+    str::FromStr,
 };
 
 pub enum FetchError {
-    Requesting(SendRequestError),
-    Payload(PayloadError),
+    HyperError(Error),
+    PayloadTooBig,
 }
 
 impl Display for FetchError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
-            FetchError::Requesting(e) => e.fmt(f),
-            FetchError::Payload(e) => e.fmt(f),
+            FetchError::HyperError(e) => e.fmt(f),
+            FetchError::PayloadTooBig => f.write_str("payload too big"),
         }
     }
 }
 
-impl From<SendRequestError> for FetchError {
-    fn from(e: SendRequestError) -> FetchError {
-        FetchError::Requesting(e)
-    }
-}
-
-impl From<PayloadError> for FetchError {
-    fn from(e: PayloadError) -> FetchError {
-        FetchError::Payload(e)
+impl From<Error> for FetchError {
+    fn from(e: Error) -> FetchError {
+        FetchError::HyperError(e)
     }
 }
 
 pub struct Fetcher {
-    client: Client,
+    client: Client<HttpsConnector<HttpConnector>>,
 }
 
 impl Fetcher {
     pub fn new() -> Self {
-        let mut client = ClientBuilder::new().header("accept", "application/json");
-        if let Ok(key) = var("PROXY_AUTH") {
-            client = client.header("proxy-authorization-key", key);
-        }
-        Self {
-            client: client.finish(),
-        }
+        let client = Client::builder().build(HttpsConnector::with_webpki_roots());
+        Self { client }
     }
 
     pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
         let req = {
-            if let Some(proxy_url) = &*PROXY_URL {
-                self.client.get(proxy_url).insert_header((
-                    HeaderName::from_lowercase(b"requested-uri").unwrap(),
-                    HeaderValue::from_str(&url).unwrap(),
-                ))
+            if let (Some(proxy_url), Some(proxy_auth)) = (&*PROXY_URL, &*PROXY_AUTH) {
+                self.client.request(
+                    Request::get(proxy_url)
+                        .header("accept", "application/json")
+                        .header("proxy-authorization-key", proxy_auth)
+                        .header("requested-uri", url)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
             } else {
-                self.client.get(url)
+                self.client.get(Uri::from_str(url).unwrap())
             }
         };
-        Ok(req.send().await?.body().limit(1024 * 1024 * 3).await?)
+        let res = req.await?;
+        let size = res.size_hint().exact();
+
+        if size.is_some() && size.unwrap() < 1024 * 1024 * 3 {
+            Ok(to_bytes(res).await?)
+        } else {
+            Err(FetchError::PayloadTooBig)
+        }
     }
 }
 

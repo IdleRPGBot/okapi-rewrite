@@ -1,7 +1,10 @@
-use actix_web::{get, HttpResponse};
+use hyper::{Body, Response};
 
-#[get("/")]
-async fn index() -> HttpResponse {
+pub fn index() -> Response<Body> {
     // For metrics
-    HttpResponse::Ok().content_type("text/plain").body("1")
+    Response::builder()
+        .status(200)
+        .header("content-type", "text/plain")
+        .body(Body::from("1"))
+        .unwrap()
 }
