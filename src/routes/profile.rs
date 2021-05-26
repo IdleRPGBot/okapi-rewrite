@@ -73,6 +73,11 @@ async fn genprofile(body: web::Json<ProfileJson>, fetcher: web::Data<Fetcher>) -
                     .content_type("application/json")
                     .body("{\"status\": \"error\", \"reason\": \"image too large\", \"detail\": \"the image file exceeds the size of 2000 pixels in at least one axis\"}");
             }
+            if dimensions.0 < 800 || dimensions.1 < 650 {
+                return HttpResponse::UnprocessableEntity()
+                    .content_type("application/json")
+                    .body("{\"status\": \"error\", \"reason\": \"image too small\", \"detail\": \"the image file needs to be at least 800x650px in size\"}");
+            }
             // We can also happily unwrap here because it is the same data
             let c = Cursor::new(buf);
             Reader::new(c)

@@ -32,7 +32,7 @@ fn json_error_handler(err: JsonPayloadError, _req: &HttpRequest) -> Error {
             .content_type("application/json")
             .body(detail),
     };
-    InternalError::from_response(err, response).into()
+    InternalError::from_response(err, response.into()).into()
 }
 
 #[actix_web::main]
