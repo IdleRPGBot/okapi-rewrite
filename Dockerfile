@@ -6,7 +6,7 @@ ARG MUSL_TARGET="x86_64-linux-musl"
 # Uses Kernel Naming (aarch64, armv7, x86_64, s390x, ppc64le)
 ARG FINAL_TARGET="x86_64"
 
-FROM docker.io/library/alpine:edge AS builder
+FROM docker.io/amd64/alpine:edge AS builder
 ARG MUSL_TARGET
 ARG RUST_TARGET
 
@@ -49,7 +49,7 @@ RUN source $HOME/.cargo/env && \
     cp target/$RUST_TARGET/release/okapi /okapi && \
     actual-strip /okapi
 
-FROM docker.io/library/alpine:edge AS dumb-init
+FROM docker.io/amd64/alpine:edge AS dumb-init
 ARG FINAL_TARGET
 
 RUN apk update && \
