@@ -74,9 +74,9 @@ lazy_static! {
         );
 
         let mut map: HashMap<String, RgbaImage> = HashMap::new();
-        for (cast_name, bytes) in all_casts.iter() {
+        for (cast_name, bytes) in &all_casts {
             map.insert(
-                cast_name.to_string(),
+                (*cast_name).to_string(),
                 resize(
                     &load_from_memory(bytes)
                         .expect("Could not load image")

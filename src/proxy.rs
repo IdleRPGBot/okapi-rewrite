@@ -36,13 +36,14 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
+    #[must_use]
     pub fn new() -> Self {
         let client = Client::builder().build(HttpsConnector::with_webpki_roots());
         Self { client }
     }
 
     pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
-        let req = {
+        let reponse_future = {
             if let (Some(proxy_url), Some(proxy_auth)) = (&*PROXY_URL, &*PROXY_AUTH) {
                 self.client.request(
                     Request::get(proxy_url)
@@ -56,11 +57,11 @@ impl Fetcher {
                 self.client.get(Uri::from_str(url).unwrap())
             }
         };
-        let res = req.await?;
-        let size = res.size_hint().exact();
+        let response = reponse_future.await?;
+        let size = response.size_hint().exact();
 
         if size.is_some() && size.unwrap() < 1024 * 1024 * 3 {
-            Ok(to_bytes(res).await?)
+            Ok(to_bytes(response).await?)
         } else {
             Err(FetchError::PayloadTooBig)
         }

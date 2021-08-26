@@ -1,5 +1,6 @@
 use hyper::{Body, Response};
 
+#[must_use]
 pub fn index() -> Response<Body> {
     // For metrics
     Response::builder()

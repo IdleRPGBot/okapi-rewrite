@@ -15,7 +15,8 @@ pub struct AdventuresJson {
     percentages: Vec<Vec<i32>>,
 }
 
-pub fn genadventures(body: AdventuresJson) -> Response<Body> {
+#[must_use]
+pub fn genadventures(body: &AdventuresJson) -> Response<Body> {
     // body is the parsed JSON
     let mut images = Vec::new();
     for idx in 0..30 {
@@ -23,7 +24,7 @@ pub fn genadventures(body: AdventuresJson) -> Response<Body> {
         let chance_min = &current_chances[0];
         let chance_max = &current_chances[1];
         let mut new_image = ADVENTURES[idx].clone();
-        let white = Rgb([0u8, 0u8, 0u8]);
+        let white = Rgb([0_u8, 0_u8, 0_u8]);
         let scale = PxScale { x: 20.0, y: 20.0 };
         draw_text_mut(
             &mut new_image,
@@ -46,7 +47,7 @@ pub fn genadventures(body: AdventuresJson) -> Response<Body> {
             &format!("{}%", chance_max),
         );
         let buf = encode_png(&new_image).expect("encoding PNG failed");
-        images.push(format!("data:image/png;base64,{}", encode(&buf)))
+        images.push(format!("data:image/png;base64,{}", encode(&buf)));
     }
     Response::builder()
         .status(200)

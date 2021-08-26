@@ -156,7 +156,7 @@ pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Response<Bo
                 .unwrap()
         }
     };
-    let radius = 4i32;
+    let radius = 4_i32;
     let intensity = 55.0;
     let width = img.width();
     let height = img.height();
@@ -167,9 +167,9 @@ pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Response<Bo
     for y in 0..height {
         for x in 0..width {
             let current_val = img.get_pixel(x, y).channels();
-            let avg = (current_val[0] as i32 + current_val[1] as i32 + current_val[2] as i32)
-                as f64
-                / 3.0;
+            let avg = f64::from(
+                i32::from(current_val[0]) + i32::from(current_val[1]) + i32::from(current_val[2]),
+            ) / 3.0;
             let val = (avg * intensity) / 255.0;
             intensity_lut[y as usize][x as usize] = val.round() as usize;
         }
@@ -192,18 +192,18 @@ pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Response<Bo
                         match pixel_intensity_count.get_mut(&(intensity_val as usize)) {
                             Some(val) => {
                                 val.val += 1;
-                                val.r += pix[0] as i32;
-                                val.g += pix[1] as i32;
-                                val.b += pix[2] as i32;
+                                val.r += i32::from(pix[0]);
+                                val.g += i32::from(pix[1]);
+                                val.b += i32::from(pix[2]);
                             }
                             None => {
                                 pixel_intensity_count.insert(
                                     intensity_val as usize,
                                     Intensity {
                                         val: 1,
-                                        r: pix[0] as i32,
-                                        g: pix[1] as i32,
-                                        b: pix[2] as i32,
+                                        r: i32::from(pix[0]),
+                                        g: i32::from(pix[1]),
+                                        b: i32::from(pix[2]),
                                     },
                                 );
                             }
@@ -225,7 +225,7 @@ pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Response<Bo
                     (cur_max.b / cur_max.val) as u8,
                     255,
                 ]),
-            )
+            );
         }
     }
     let final_image = encode_png(&target).expect("encoding PNG failed");

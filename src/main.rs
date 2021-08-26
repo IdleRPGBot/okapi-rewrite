@@ -1,3 +1,13 @@
+#![deny(clippy::pedantic)]
+#![allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::too_many_lines,
+    clippy::missing_panics_doc,
+    clippy::missing_errors_doc,
+    clippy::module_name_repetitions
+)]
 use bytes::Buf;
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -27,19 +37,22 @@ pub mod encoder;
 pub mod proxy;
 pub mod routes;
 
-async fn handle(req: Request<Body>, fetcher: Arc<proxy::Fetcher>) -> Result<Response<Body>, Error> {
+async fn handle(
+    request: Request<Body>,
+    fetcher: Arc<proxy::Fetcher>,
+) -> Result<Response<Body>, Error> {
     let start = Instant::now();
-    let path = req.uri().path().to_owned();
-    let method = req.method().to_owned();
-    let body = hyper::body::aggregate(req).await?;
+    let path = request.uri().path().to_owned();
+    let method = request.method().clone();
+    let body = hyper::body::aggregate(request).await?;
     let reader = body.reader();
 
-    let res: Result<Response<Body>, serde_json::Error> = async {
+    let response: Result<Response<Body>, serde_json::Error> = async {
         match (&method, path.as_str()) {
             (&Method::POST, "/api/genadventures") => {
-                Ok(genadventures(serde_json::from_reader(reader)?))
+                Ok(genadventures(&serde_json::from_reader(reader)?))
             }
-            (&Method::POST, "/api/genchess") => Ok(genchess(serde_json::from_reader(reader)?)),
+            (&Method::POST, "/api/genchess") => Ok(genchess(&serde_json::from_reader(reader)?)),
             (&Method::POST, "/api/imageops/pixel") => {
                 Ok(pixelate(serde_json::from_reader(reader)?, fetcher).await)
             }
@@ -64,7 +77,7 @@ async fn handle(req: Request<Body>, fetcher: Arc<proxy::Fetcher>) -> Result<Resp
     }
     .await;
 
-    let resp = match res {
+    let resp = match response {
         Ok(r) => r,
         Err(e) => Response::builder()
             .status(StatusCode::UNPROCESSABLE_ENTITY)
