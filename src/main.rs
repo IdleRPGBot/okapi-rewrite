@@ -12,6 +12,7 @@ use routes::{
     overlay::genoverlay,
     profile::genprofile,
 };
+use tokio::signal::unix::{signal, SignalKind};
 
 use std::{
     convert::Infallible,
@@ -49,7 +50,7 @@ async fn handle(req: Request<Body>, fetcher: Arc<proxy::Fetcher>) -> Result<Resp
                 Ok(edges_endpoint(serde_json::from_reader(reader)?, fetcher).await)
             }
             (&Method::POST, "/api/imageops/oil") => {
-                Ok(oil_endpoint(serde_json::from_reader(reader).unwrap(), fetcher).await)
+                Ok(oil_endpoint(serde_json::from_reader(reader)?, fetcher).await)
             }
             (&Method::GET, "/") => Ok(index()),
             (&Method::POST, "/api/genoverlay") => {
@@ -82,6 +83,16 @@ async fn handle(req: Request<Body>, fetcher: Arc<proxy::Fetcher>) -> Result<Resp
     Ok(resp)
 }
 
+async fn shutdown_signal() {
+    let mut sigint = signal(SignalKind::interrupt()).expect("failed to install SIGINT handler");
+    let mut sigterm = signal(SignalKind::terminate()).expect("failed to install SIGTERM handler");
+
+    tokio::select! {
+        _ = sigint.recv() => {},
+        _ = sigterm.recv() => {},
+    };
+}
+
 #[tokio::main]
 async fn main() {
     set_var("RUST_LOG", "info");
@@ -90,6 +101,7 @@ async fn main() {
         Ok(p) => SocketAddr::from(([0, 0, 0, 0], p.parse().unwrap())),
         Err(_) => SocketAddr::from(([0, 0, 0, 0], 3000)),
     };
+    info!("okapi starting on {}", listen_address);
 
     let client = Arc::new(proxy::Fetcher::new());
 
@@ -99,10 +111,9 @@ async fn main() {
     });
 
     let server = Server::bind(&listen_address).serve(make_service);
+    let graceful = server.with_graceful_shutdown(shutdown_signal());
 
-    info!("okapi starting on {}", listen_address);
-
-    if let Err(e) = server.await {
+    if let Err(e) = graceful.await {
         error!("Server error: {}", e);
     }
 }

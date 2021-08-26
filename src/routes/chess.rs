@@ -13,7 +13,7 @@ pub struct ChessJson {
 
 pub fn genchess(body: ChessJson) -> Response<Body> {
     let xml = &body.xml;
-    let tree = match Tree::from_str(&xml, &usvg::Options::default()) {
+    let tree = match Tree::from_str(xml, &usvg::Options::default().to_ref()) {
         Ok(tree) => tree,
         Err(e) => {
             return Response::builder()

@@ -33,7 +33,7 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Bo
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
         _ => {
-            let buf = match fetcher.fetch(&image_url).await {
+            let buf = match fetcher.fetch(image_url).await {
                 Ok(buf) => buf,
                 Err(e) => {
                     return Response::builder()
@@ -218,11 +218,11 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Bo
                 &mut blend,
                 color,
                 165,
-                495 + ((i as u32) * 20),
+                495 + ((i as i32) * 20),
                 scale,
                 200,
                 &*TRAVITIA_FONT,
-                &line,
+                line,
             );
         }
     }
@@ -246,11 +246,11 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Bo
                 &mut blend,
                 color,
                 165,
-                574 + ((i as u32) * 20),
+                574 + ((i as i32) * 20),
                 scale,
                 200,
                 &*TRAVITIA_FONT,
-                &line,
+                line,
             );
         }
     }

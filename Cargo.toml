@@ -8,10 +8,10 @@ edition = "2018"
 ab_glyph = "0.2"
 base64 = "0.13"
 bytes = "1.0"
-env_logger = { version = "0.8", default-features = false, features = ["termcolor", "atty", "humantime"] }
+env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty", "humantime"] }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
 hyper-rustls = { version = "0.22", default-features = false, features = ["webpki-tokio"] }
-image = { version = "0.23", default-features = false, features = [
+image = { git = "https://github.com/image-rs/image.git", branch = "master", default-features = false, features = [
     "jpeg",
     "png",
     "webp"
@@ -19,13 +19,13 @@ image = { version = "0.23", default-features = false, features = [
 imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
 lazy_static = "1.4"
 log = "0.4"
-resvg = { version = "0.14", default-features = false }
+resvg = { version = "0.16", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-textwrap = "0.13"
-tokio = { version = "1.0", default-features = false, features = ["macros", "rt-multi-thread"] }
-tiny-skia = "0.5"
-usvg = { version = "0.14", default-features = false }
+textwrap = { version = "0.14", default-features = false }
+tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread", "signal"] }
+tiny-skia = { version = "0.6", default-features = false }
+usvg = { version = "0.16", default-features = false }
 
 [profile.release]
 codegen-units = 1
