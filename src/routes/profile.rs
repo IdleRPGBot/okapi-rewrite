@@ -1,7 +1,11 @@
 use crate::{constants::*, encoder::encode_png, proxy::Fetcher};
 use ab_glyph::PxScale;
 use hyper::{Body, Response, StatusCode};
-use image::{imageops::overlay, io::Reader, Rgba};
+use image::{
+    imageops::overlay,
+    io::{Limits, Reader},
+    Rgba,
+};
 use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
 use std::{io::Cursor, sync::Arc};
@@ -33,6 +37,9 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Bo
     let mut img = match &image_url[..] {
         "0" => DEFAULT_PROFILE.clone(),
         _ => {
+            let mut limits = Limits::default();
+            limits.max_image_width = Some(2000);
+            limits.max_image_height = Some(2000);
             let buf = match fetcher.fetch(image_url).await {
                 Ok(buf) => buf,
                 Err(e) => {
@@ -46,8 +53,10 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Bo
                         .unwrap()
                 }
             };
-            let b = Cursor::new(buf.clone());
-            let reader = match Reader::new(b).with_guessed_format() {
+            let b = Cursor::new(buf);
+            let mut reader = Reader::new(b);
+            reader.limits(limits);
+            reader = match reader.with_guessed_format() {
                 Ok(r) => r,
                 Err(e) => {
                     return Response::builder()
@@ -60,41 +69,19 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Response<Bo
                         .unwrap()
                 }
             };
-            let dimensions = match reader.into_dimensions() {
-                Ok(d) => d,
+            match reader.decode() {
+                Ok(i) => i.to_rgba8(),
                 Err(e) => {
                     return Response::builder()
                         .status(StatusCode::UNPROCESSABLE_ENTITY)
                         .header("content-type", "application/json")
                         .body(Body::from(format!(
-                            "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
+                            "{{\"status\": \"error\", \"reason\": \"decoding error\", \"detail\": \"{}\"}}",
                             e
                         )))
                         .unwrap()
                 }
-            };
-            if dimensions.0 > 2000 || dimensions.1 > 2000 {
-                return Response::builder()
-                    .status(StatusCode::UNPROCESSABLE_ENTITY)
-                    .header("content-type", "application/json")
-                    .body(Body::from("{{\"status\": \"error\", \"reason\": \"image too large\", \"detail\": \"the image file exceeds the size of 2000 pixels in at least one axis\"}}"))
-                    .unwrap();
             }
-            if dimensions.0 < 800 || dimensions.1 < 650 {
-                return Response::builder()
-                    .status(StatusCode::UNPROCESSABLE_ENTITY)
-                    .header("content-type", "application/json")
-                    .body(Body::from("{{\"status\": \"error\", \"reason\": \"image too small\", \"detail\": \"the image file needs to be at least 800x650px in size\"}}"))
-                    .unwrap();
-            }
-            // We can also happily unwrap here because it is the same data
-            let c = Cursor::new(buf);
-            Reader::new(c)
-                .with_guessed_format()
-                .unwrap()
-                .decode()
-                .unwrap()
-                .to_rgba8()
         }
     };
     overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
