@@ -2,7 +2,7 @@
 name = "okapi"
 version = "1.1.0"
 authors = ["Jens Reidel <jens@troet.org>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 ab_glyph = "0.2"
@@ -19,13 +19,13 @@ image = { git = "https://github.com/image-rs/image.git", branch = "master", defa
 imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
 lazy_static = "1.4"
 log = "0.4"
-resvg = { version = "0.16", default-features = false }
+resvg = { version = "0.18", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 textwrap = { version = "0.14", default-features = false }
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread", "signal"] }
 tiny-skia = { version = "0.6", default-features = false }
-usvg = { version = "0.16", default-features = false }
+usvg = { version = "0.18", default-features = false }
 
 [profile.release]
 codegen-units = 1

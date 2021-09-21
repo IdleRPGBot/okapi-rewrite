@@ -1,3 +1,9 @@
+rustflags = ["-Z", "mir-opt-level=3"]
+
+[unstable]
+build-std = ["std", "panic_abort"]
+build-std-features = ["panic_immediate_abort"]
+
 [target.aarch64-unknown-linux-musl]
 linker = "aarch64-linux-musl-ld"
 
