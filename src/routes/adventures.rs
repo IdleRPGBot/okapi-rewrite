@@ -1,14 +1,15 @@
 use crate::{
     constants::{ADVENTURES, TRAVITIA_FONT},
     encoder::encode_png,
+    proxy::Fetcher,
 };
 use ab_glyph::PxScale;
-use base64::encode;
 use hyper::{Body, Response};
 use image::Rgb;
 use imageproc::drawing::draw_text_mut;
 use serde::Deserialize;
-use serde_json::to_string;
+
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct AdventuresJson {
@@ -16,9 +17,9 @@ pub struct AdventuresJson {
 }
 
 #[must_use]
-pub fn genadventures(body: &AdventuresJson) -> Response<Body> {
+pub async fn genadventures(body: &AdventuresJson, fetcher: Arc<Fetcher>) -> Response<Body> {
     // body is the parsed JSON
-    let mut images = Vec::new();
+    let mut images: Vec<Vec<u8>> = Vec::with_capacity(30);
     for idx in 0..30 {
         let current_chances = &body.percentages[idx];
         let chance_min = &current_chances[0];
@@ -47,11 +48,14 @@ pub fn genadventures(body: &AdventuresJson) -> Response<Body> {
             &format!("{}%", chance_max),
         );
         let buf = encode_png(&new_image).expect("encoding PNG failed");
-        images.push(format!("data:image/png;base64,{}", encode(&buf)));
+        images.push(buf);
     }
+
+    let tags = fetcher.upload_images(images).await;
+
     Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(Body::from(to_string(&images).unwrap()))
+        .body(Body::from(tags))
         .unwrap()
 }

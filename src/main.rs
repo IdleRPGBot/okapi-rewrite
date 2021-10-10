@@ -50,7 +50,7 @@ async fn handle(
     let response: Result<Response<Body>, serde_json::Error> = async {
         match (&method, path.as_str()) {
             (&Method::POST, "/api/genadventures") => {
-                Ok(genadventures(&serde_json::from_reader(reader)?))
+                Ok(genadventures(&serde_json::from_reader(reader)?, fetcher).await)
             }
             (&Method::POST, "/api/genchess") => Ok(genchess(&serde_json::from_reader(reader)?)),
             (&Method::POST, "/api/imageops/pixel") => {

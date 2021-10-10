@@ -42,6 +42,20 @@ impl Fetcher {
         Self { client }
     }
 
+    pub async fn upload_images(&self, images: Vec<Vec<u8>>) -> Bytes {
+        let json = serde_json::to_string(&images).unwrap();
+        let request = Request::post("http://localhost:9511")
+            .header("Content-Type", "application/json")
+            .header(
+                "Authorization",
+                &*PROXY_AUTH.as_ref().map(|s| s.as_str()).unwrap_or_default(),
+            )
+            .body(Body::from(json))
+            .unwrap();
+        let response = self.client.request(request).await.unwrap();
+        hyper::body::to_bytes(response).await.unwrap()
+    }
+
     pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
         let reponse_future = {
             if let (Some(proxy_url), Some(proxy_auth)) = (&*PROXY_URL, &*PROXY_AUTH) {

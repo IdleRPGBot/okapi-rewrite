@@ -8,6 +8,7 @@ use lazy_static::lazy_static;
 use std::{collections::HashMap, env::var, str::FromStr};
 
 lazy_static! {
+    pub static ref RENDERER_KEY: Vec<u8> = var("RENDERER_KEY").unwrap().as_bytes().to_vec();
     pub static ref PROXY_URL: Option<Uri> =
         var("PROXY_URL").ok().map(|p| Uri::from_str(&p).unwrap());
     pub static ref PROXY_AUTH: Option<String> = var("PROXY_AUTH").ok();
