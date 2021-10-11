@@ -1,5 +1,4 @@
 use crate::{constants::PROFILE, encoder::encode_png, proxy::Fetcher};
-use base64::encode;
 use hyper::{Body, Response, StatusCode};
 use image::{
     imageops::{overlay, resize, FilterType},
@@ -63,10 +62,10 @@ pub async fn genoverlay(body: OverlayJson, fetcher: Arc<Fetcher>) -> Response<Bo
     // Lanczos3 is best, but has slow speed
     let mut img = resize(&img, 800, 650, FilterType::Lanczos3);
     overlay(&mut img, &PROFILE.clone(), 0, 0);
-    let final_image = encode(encode_png(&img).expect("encoding PNG failed"));
+    let final_image = encode_png(&img).expect("encoding PNG failed");
     Response::builder()
         .status(200)
-        .header("content-type", "text/plain")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))
         .unwrap()
 }

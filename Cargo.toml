@@ -6,25 +6,23 @@ edition = "2021"
 
 [dependencies]
 ab_glyph = "0.2"
-base64 = "0.13"
 bytes = "1.0"
 env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty", "humantime"] }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
-hyper-rustls = { version = "0.22", default-features = false, features = ["webpki-tokio"] }
+hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2"] }
 image = { git = "https://github.com/image-rs/image.git", branch = "master", default-features = false, features = [
     "jpeg",
-    "png",
-    "webp"
+    "png"
 ] }
 imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
 lazy_static = "1.4"
+libc = { version = "0.2", default-features = false }
 log = "0.4"
 resvg = { version = "0.19", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_urlencoded = "0.7"
 textwrap = { version = "0.14", default-features = false }
-tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
 tiny-skia = { version = "0.6", default-features = false }
 usvg = { version = "0.19", default-features = false }
 

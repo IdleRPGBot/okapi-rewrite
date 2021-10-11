@@ -13,6 +13,7 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Body, Error, Method, Request, Response, Server, StatusCode,
 };
+use libc::{c_int, sighandler_t, signal, SIGINT, SIGTERM};
 use log::{error, info};
 use routes::{
     adventures::genadventures,
@@ -22,7 +23,6 @@ use routes::{
     overlay::genoverlay,
     profile::genprofile,
 };
-use tokio::signal::unix::{signal, SignalKind};
 
 use std::{
     convert::Infallible,
@@ -96,18 +96,19 @@ async fn handle(
     Ok(resp)
 }
 
-async fn shutdown_signal() {
-    let mut sigint = signal(SignalKind::interrupt()).expect("failed to install SIGINT handler");
-    let mut sigterm = signal(SignalKind::terminate()).expect("failed to install SIGTERM handler");
+pub extern "C" fn handler(_: c_int) {
+    std::process::exit(0);
+}
 
-    tokio::select! {
-        _ = sigint.recv() => {},
-        _ = sigterm.recv() => {},
-    };
+unsafe fn set_os_handlers() {
+    signal(SIGINT, handler as extern "C" fn(_) as sighandler_t);
+    signal(SIGTERM, handler as extern "C" fn(_) as sighandler_t);
 }
 
 #[tokio::main]
 async fn main() {
+    unsafe { set_os_handlers() };
+
     set_var("RUST_LOG", "info");
     env_logger::init();
     let listen_address = match var("PORT") {
@@ -124,9 +125,8 @@ async fn main() {
     });
 
     let server = Server::bind(&listen_address).serve(make_service);
-    let graceful = server.with_graceful_shutdown(shutdown_signal());
 
-    if let Err(e) = graceful.await {
+    if let Err(e) = server.await {
         error!("Server error: {}", e);
     }
 }
