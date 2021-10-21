@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 ab_glyph = "0.2"
 bytes = "1.0"
-env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty", "humantime"] }
+env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty"] }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2"] }
 image = { git = "https://github.com/image-rs/image.git", branch = "master", default-features = false, features = [

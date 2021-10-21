@@ -1,35 +1,17 @@
-use crate::constants::{PROXY_AUTH, PROXY_URL};
+use crate::{
+    constants::{PROXY_AUTH, PROXY_URL},
+    error::{Error, Result},
+};
+
 use bytes::Bytes;
 use hyper::{
     body::{to_bytes, HttpBody},
     client::HttpConnector,
-    Body, Client, Error, Request, Uri,
+    Body, Client, Request, Uri,
 };
 use hyper_rustls::HttpsConnector;
-use std::{
-    fmt::{Display, Formatter, Result as FmtResult},
-    str::FromStr,
-};
 
-pub enum FetchError {
-    HyperError(Error),
-    PayloadTooBig,
-}
-
-impl Display for FetchError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        match self {
-            FetchError::HyperError(e) => e.fmt(f),
-            FetchError::PayloadTooBig => f.write_str("payload too big"),
-        }
-    }
-}
-
-impl From<Error> for FetchError {
-    fn from(e: Error) -> FetchError {
-        FetchError::HyperError(e)
-    }
-}
+use std::str::FromStr;
 
 pub struct Fetcher {
     client: Client<HttpsConnector<HttpConnector>>,
@@ -42,21 +24,21 @@ impl Fetcher {
         Self { client }
     }
 
-    pub async fn upload_images(&self, images: Vec<Vec<u8>>) -> Bytes {
-        let json = serde_json::to_string(&images).unwrap();
+    pub async fn upload_images(&self, images: Vec<Vec<u8>>) -> Result<Bytes> {
+        let json = serde_json::to_string(&images)?;
         let request = Request::post("http://localhost:9511")
             .header("Content-Type", "application/json")
             .header(
                 "Authorization",
-                &*PROXY_AUTH.as_ref().map(|s| s.as_str()).unwrap_or_default(),
+                &*PROXY_AUTH.as_ref().map(String::as_str).unwrap_or_default(),
             )
-            .body(Body::from(json))
-            .unwrap();
-        let response = self.client.request(request).await.unwrap();
-        hyper::body::to_bytes(response).await.unwrap()
+            .body(Body::from(json))?;
+        let response = self.client.request(request).await?;
+
+        Ok(hyper::body::to_bytes(response).await?)
     }
 
-    pub async fn fetch(&self, url: &str) -> Result<Bytes, FetchError> {
+    pub async fn fetch(&self, url: &str) -> Result<Bytes> {
         let reponse_future = {
             if let (Some(proxy_url), Some(proxy_auth)) = (&*PROXY_URL, &*PROXY_AUTH) {
                 self.client.request(
@@ -64,11 +46,10 @@ impl Fetcher {
                         .header("accept", "application/json")
                         .header("proxy-authorization-key", proxy_auth)
                         .header("requested-uri", url)
-                        .body(Body::empty())
-                        .unwrap(),
+                        .body(Body::empty())?,
                 )
             } else {
-                self.client.get(Uri::from_str(url).unwrap())
+                self.client.get(Uri::from_str(url)?)
             }
         };
         let response = reponse_future.await?;
@@ -77,7 +58,7 @@ impl Fetcher {
         if size.is_some() && size.unwrap() < 1024 * 1024 * 3 {
             Ok(to_bytes(response).await?)
         } else {
-            Err(FetchError::PayloadTooBig)
+            Err(Error::PayloadTooBig)
         }
     }
 }

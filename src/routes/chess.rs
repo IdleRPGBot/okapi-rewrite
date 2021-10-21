@@ -1,5 +1,6 @@
-use crate::encoder::encode_png;
-use hyper::{Body, Response, StatusCode};
+use crate::{encoder::encode_png, error::Result};
+
+use hyper::{Body, Response};
 use image::RgbaImage;
 use resvg::render;
 use serde::Deserialize;
@@ -11,30 +12,21 @@ pub struct ChessJson {
     xml: String, // SVG
 }
 
-#[must_use]
-pub fn genchess(body: &ChessJson) -> Response<Body> {
+pub fn genchess(body: &ChessJson) -> Result<Response<Body>> {
     let xml = &body.xml;
-    let tree = match Tree::from_str(xml, &usvg::Options::default().to_ref()) {
-        Ok(tree) => tree,
-        Err(e) => {
-            return Response::builder()
-                .status(StatusCode::UNPROCESSABLE_ENTITY)
-                .header("content-type", "application/json")
-                .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"invalid SVG data\", \"detail\": \"{}\"}}",
-                    e
-                )))
-                .unwrap();
-        }
-    };
+    let tree = Tree::from_str(xml, &usvg::Options::default().to_ref())?;
+
+    // SAFETY: This only errors if width or height are 0
     let mut map = Pixmap::new(390, 390).unwrap();
-    render(&tree, FitTo::Width(390), map.as_mut()).expect("rendering yielded no result");
+    render(&tree, FitTo::Width(390), map.as_mut()).unwrap();
+
     let vect = map.take();
+    // SAFETY: Only returns None if container too small
     let image = RgbaImage::from_raw(390, 390, vect).unwrap();
-    let final_image = encode_png(&image).expect("encoding PNG failed");
-    Response::builder()
+    let final_image = encode_png(&image)?;
+
+    Ok(Response::builder()
         .status(200)
         .header("content-type", "image/png")
-        .body(Body::from(final_image))
-        .unwrap()
+        .body(Body::from(final_image))?)
 }

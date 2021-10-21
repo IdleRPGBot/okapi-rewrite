@@ -1,11 +1,10 @@
+use crate::error::Result;
+
 use hyper::{Body, Response};
 
-#[must_use]
-pub fn index() -> Response<Body> {
-    // For metrics
-    Response::builder()
+pub fn index() -> Result<Response<Body>> {
+    Ok(Response::builder()
         .status(200)
         .header("content-type", "text/plain")
-        .body(Body::from("1"))
-        .unwrap()
+        .body(Body::from("1"))?)
 }
