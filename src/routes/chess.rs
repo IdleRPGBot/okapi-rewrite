@@ -1,4 +1,4 @@
-use crate::{encoder::encode_png, error::Result};
+use crate::{encoder::encode_webp, error::Result};
 
 use hyper::{Body, Response};
 use image::RgbaImage;
@@ -23,10 +23,10 @@ pub fn genchess(body: &ChessJson) -> Result<Response<Body>> {
     let vect = map.take();
     // SAFETY: Only returns None if container too small
     let image = RgbaImage::from_raw(390, 390, vect).unwrap();
-    let final_image = encode_png(&image)?;
+    let final_image = encode_webp(&image);
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
+        .header("content-type", "image/webp")
         .body(Body::from(final_image))?)
 }

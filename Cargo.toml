@@ -10,9 +10,10 @@ bytes = "1.0"
 env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty"] }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2"] }
-image = { git = "https://github.com/image-rs/image.git", branch = "master", default-features = false, features = [
+image = { version = "0.24.0-alpha", default-features = false, features = [
     "jpeg",
-    "png"
+    "png",
+    "webp"
 ] }
 imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
 lazy_static = "1.4"
@@ -25,6 +26,10 @@ textwrap = { version = "0.14", default-features = false }
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
 tiny-skia = { version = "0.6", default-features = false }
 usvg = { version = "0.19", default-features = false }
+webp = { git = "https://github.com/Gelbpunkt/webp.git", branch = "master" }
+
+[patch.crates-io]
+image = { git = "https://github.com/image-rs/image.git", branch = "master" }
 
 [profile.release]
 codegen-units = 1

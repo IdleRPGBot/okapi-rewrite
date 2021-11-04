@@ -1,6 +1,6 @@
 use crate::{
     constants::{ADVENTURES, TRAVITIA_FONT},
-    encoder::encode_png,
+    encoder::encode_webp,
     error::Result,
     proxy::Fetcher,
 };
@@ -52,7 +52,7 @@ pub async fn genadventures(body: &AdventuresJson, fetcher: Arc<Fetcher>) -> Resu
             &format!("{}%", chance_max),
         );
 
-        let buf = encode_png(&new_image)?;
+        let buf = encode_webp(&new_image);
 
         images.push(buf);
     }

@@ -1,4 +1,4 @@
-use crate::{constants::PROFILE, encoder::encode_png, error::Result, proxy::Fetcher};
+use crate::{constants::PROFILE, encoder::encode_webp, error::Result, proxy::Fetcher};
 
 use hyper::{Body, Response};
 use image::{
@@ -31,10 +31,10 @@ pub async fn genoverlay(body: OverlayJson, fetcher: Arc<Fetcher>) -> Result<Resp
     let mut img = resize(&img, 800, 650, FilterType::Lanczos3);
     overlay(&mut img, &PROFILE.clone(), 0, 0);
 
-    let final_image = encode_png(&img)?;
+    let final_image = encode_webp(&img);
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
+        .header("content-type", "image/webp")
         .body(Body::from(final_image))?)
 }
