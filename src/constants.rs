@@ -2,10 +2,14 @@ use ab_glyph::FontVec;
 use hyper::Uri;
 use image::{
     imageops::{resize, FilterType},
-    load_from_memory, RgbImage, RgbaImage,
+    DynamicImage, RgbImage, RgbaImage,
 };
 use lazy_static::lazy_static;
 use std::{collections::HashMap, env::var, str::FromStr};
+
+fn load_from_memory(bytes: &[u8]) -> Option<DynamicImage> {
+    Some(webp::Decoder::new(bytes).decode()?.to_image())
+}
 
 lazy_static! {
     pub static ref RENDERER_KEY: Vec<u8> = var("RENDERER_KEY").unwrap().as_bytes().to_vec();
