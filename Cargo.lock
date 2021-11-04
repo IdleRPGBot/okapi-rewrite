@@ -554,9 +554,9 @@ checksum = "c7d73b3f436185384286bd8098d17ec07c9a7d2388a6599f824d8502b529702a"
 
 [[package]]
 name = "libwebp-sys"
-version = "0.2.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e70c064738b35a28fd6f991d27c0d9680353641d167ae3702a8228dd8272ef6"
+checksum = "6a8f5c1a5fdedaa24e77fcbe1c2acbb22543afa737fce87ca29b137cfb33816d"
 dependencies = [
  "cc",
 ]
@@ -759,6 +759,7 @@ dependencies = [
  "imageproc",
  "lazy_static",
  "libc",
+ "libwebp-sys",
  "log",
  "resvg",
  "serde",
@@ -767,7 +768,6 @@ dependencies = [
  "tiny-skia",
  "tokio",
  "usvg",
- "webp",
 ]
 
 [[package]]
@@ -1340,15 +1340,6 @@ checksum = "38eb105f1c59d9eaa6b5cdc92b859d85b926e82cb2e0945cd0c9259faa6fe9fb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "webp"
-version = "0.2.0"
-source = "git+https://github.com/Gelbpunkt/webp.git?branch=master#943ef97363c79864f21139cc5ab81f361b3d51dc"
-dependencies = [
- "image",
- "libwebp-sys",
 ]
 
 [[package]]

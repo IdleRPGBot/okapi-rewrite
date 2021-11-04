@@ -26,7 +26,7 @@ textwrap = { version = "0.14", default-features = false }
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
 tiny-skia = { version = "0.6", default-features = false }
 usvg = { version = "0.19", default-features = false }
-webp = { git = "https://github.com/Gelbpunkt/webp.git", branch = "master" }
+libwebp-sys = { version = "0.4", features = ["avx2", "sse41", "neon"] }
 
 [patch.crates-io]
 image = { git = "https://github.com/image-rs/image.git", branch = "master" }

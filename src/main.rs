@@ -37,6 +37,7 @@ pub mod encoder;
 pub mod error;
 pub mod proxy;
 pub mod routes;
+pub mod webp;
 
 async fn handle(
     request: Request<Body>,
