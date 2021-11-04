@@ -10,8 +10,8 @@ where
     Container: Deref<Target = [P::Subpixel]>,
 {
     match P::CHANNEL_COUNT {
-        3 => encode_webp_rgb(img.as_ref(), img.width(), img.height(), 82),
-        4 => encode_webp_rgba(img.as_ref(), img.width(), img.height(), 82),
+        3 => encode_webp_rgb(img.as_ref(), img.width(), img.height(), 64),
+        4 => encode_webp_rgba(img.as_ref(), img.width(), img.height(), 64),
         _ => unsafe { unreachable_unchecked() },
     }
 }

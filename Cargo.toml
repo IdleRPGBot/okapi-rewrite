@@ -12,8 +12,7 @@ hyper = { version = "0.14", default-features = false, features = ["server", "cli
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2"] }
 image = { version = "0.24.0-alpha", default-features = false, features = [
     "jpeg",
-    "png",
-    "webp"
+    "png"
 ] }
 imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
 lazy_static = "1.4"

@@ -1,7 +1,7 @@
 use image::{DynamicImage, ImageBuffer};
 use libwebp_sys::{
     VP8StatusCode, WebPBitstreamFeatures, WebPDecodeRGB, WebPDecodeRGBA, WebPEncodeRGB,
-    WebPEncodeRGBA, WebPGetFeatures, WebPGetInfo,
+    WebPEncodeRGBA, WebPGetFeatures,
 };
 
 pub fn encode_webp_rgba(input_image: &[u8], width: u32, height: u32, quality: i32) -> Vec<u8> {
@@ -20,18 +20,6 @@ pub fn encode_webp_rgba(input_image: &[u8], width: u32, height: u32, quality: i3
     }
 }
 
-pub fn decode_webp_rgba(buf: &[u8]) -> Vec<u8> {
-    let mut width = 0;
-    let mut height = 0;
-    let len = buf.len();
-    unsafe {
-        WebPGetInfo(buf.as_ptr(), len, &mut width, &mut height);
-        let out_buf = WebPDecodeRGBA(buf.as_ptr(), len, &mut width, &mut height);
-
-        std::slice::from_raw_parts(out_buf, (width * height * 4) as usize).into()
-    }
-}
-
 pub fn encode_webp_rgb(input_image: &[u8], width: u32, height: u32, quality: i32) -> Vec<u8> {
     unsafe {
         let mut out_buf = std::ptr::null_mut();
@@ -45,18 +33,6 @@ pub fn encode_webp_rgb(input_image: &[u8], width: u32, height: u32, quality: i32
             &mut out_buf,
         );
         std::slice::from_raw_parts(out_buf, len as usize).into()
-    }
-}
-
-pub fn decode_webp_rgb(buf: &[u8]) -> Vec<u8> {
-    let mut width = 0;
-    let mut height = 0;
-    let len = buf.len();
-    unsafe {
-        WebPGetInfo(buf.as_ptr(), len, &mut width, &mut height);
-        let out_buf = WebPDecodeRGB(buf.as_ptr(), len, &mut width, &mut height);
-
-        std::slice::from_raw_parts(out_buf, (width * height * 3) as usize).into()
     }
 }
 
