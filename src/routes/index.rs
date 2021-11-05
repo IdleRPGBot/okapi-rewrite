@@ -1,6 +1,6 @@
-use crate::error::Result;
-
 use hyper::{Body, Response};
+
+use crate::error::Result;
 
 pub fn index() -> Result<Response<Body>> {
     Ok(Response::builder()

@@ -264,6 +264,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast_image_resize"
+version = "0.4.1-alpha.0"
+source = "git+https://github.com/Gelbpunkt/fast_image_resize.git#efb8534946cb4b797eb2900da6c18af7a864670f"
+dependencies = [
+ "num-traits",
+ "thiserror",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -448,7 +457,7 @@ dependencies = [
 [[package]]
 name = "image"
 version = "0.24.0-alpha"
-source = "git+https://github.com/image-rs/image.git?branch=master#ceabd672fec3a9ec8e06687b37d32a81b736f0e0"
+source = "git+https://github.com/Gelbpunkt/image.git?branch=export-pixelwithcolortype#6bfbe3780844760526b7e5f8d91db2a8f4ae6a4c"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -463,7 +472,7 @@ dependencies = [
 [[package]]
 name = "imageproc"
 version = "0.22.0"
-source = "git+https://github.com/Gelbpunkt/imageproc#ac201945b04ee88e97d34000608ec90c5f946dfc"
+source = "git+https://github.com/Gelbpunkt/imageproc#7a5883647efa518987f2032e0b560fa07007a15f"
 dependencies = [
  "ab_glyph",
  "approx",
@@ -753,6 +762,7 @@ dependencies = [
  "ab_glyph",
  "bytes",
  "env_logger",
+ "fast_image_resize",
  "hyper",
  "hyper-rustls",
  "image",
@@ -1025,9 +1035,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.68"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f690853975602e1bfe1ccbf50504d67174e3bcf340f23b5ea9992e0587a52d8"
+checksum = "e466864e431129c7e0d3476b92f20458e5879919a0596c6472738d9fa2d342f8"
 dependencies = [
  "itoa",
  "ryu",
@@ -1118,6 +1128,26 @@ name = "textwrap"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
+
+[[package]]
+name = "thiserror"
+version = "1.0.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "854babe52e4df1653706b98fcfc05843010039b406875930a70e4d9644e5c417"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa32fd3f627f367fe16f893e2597ae3c05020f8bba2666a4e6ea73d377e5714b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "tiny-skia"

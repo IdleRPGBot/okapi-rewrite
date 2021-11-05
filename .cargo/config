@@ -10,4 +10,4 @@ rustflags = ["-L", "native=/aarch64-linux-musl-cross/aarch64-linux-musl/lib", "-
 rustflags = ["-C", "target-cpu=native", "-L", "native=/usr/lib", "-Z", "mir-opt-level=3"]
 
 [target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "target-cpu=native"]
+rustflags = ["-C", "target-cpu=native", "-Z", "mir-opt-level=3"]

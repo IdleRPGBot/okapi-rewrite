@@ -1,13 +1,13 @@
 use ab_glyph::FontVec;
 use hyper::Uri;
-use image::{
-    imageops::{resize, FilterType},
-    RgbImage, RgbaImage,
-};
+use image::{RgbImage, RgbaImage};
 use lazy_static::lazy_static;
 use std::{collections::HashMap, env::var, str::FromStr};
 
-use crate::webp::decode;
+use crate::{
+    resize::{resize, FilterType},
+    webp::decode,
+};
 
 lazy_static! {
     pub static ref RENDERER_KEY: Vec<u8> = var("RENDERER_KEY").unwrap().as_bytes().to_vec();
@@ -20,11 +20,11 @@ lazy_static! {
     pub static ref PROFILE: RgbaImage =
         decode(include_bytes!("../assets/images/ProfileOverlayNew.webp"))
             .expect("Could not load image")
-            .to_rgba8();
+            .into_rgba8();
     pub static ref DEFAULT_PROFILE: RgbaImage =
         decode(include_bytes!("../assets/images/ProfileNew.webp"))
             .expect("Could not load image")
-            .to_rgba8();
+            .into_rgba8();
     pub static ref CASTS: HashMap<String, RgbaImage> = {
         let mut all_casts = HashMap::new();
         all_casts.insert(
@@ -81,7 +81,7 @@ lazy_static! {
             map.insert(
                 (*cast_name).to_string(),
                 resize(
-                    &decode(bytes).expect("Could not load image").to_rgba8(),
+                    decode(bytes).expect("Could not load image"),
                     22,
                     22,
                     FilterType::Lanczos3,
@@ -93,93 +93,93 @@ lazy_static! {
     pub static ref ADVENTURES: Vec<RgbImage> = vec![
         decode(include_bytes!("../assets/images/adventures/1.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/2.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/3.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/4.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/5.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/6.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/7.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/8.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/9.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/10.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/11.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/12.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/13.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/14.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/15.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/16.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/17.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/18.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/19.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/20.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/21.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/22.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/23.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/24.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/25.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/26.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/27.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/28.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/29.webp"))
             .expect("Could not load image")
-            .to_rgb8(),
+            .into_rgb8(),
         decode(include_bytes!("../assets/images/adventures/30.webp"))
             .expect("Could not load image")
-            .to_rgb8()
+            .into_rgb8()
     ];
 }

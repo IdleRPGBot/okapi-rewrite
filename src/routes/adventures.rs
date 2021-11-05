@@ -1,10 +1,3 @@
-use crate::{
-    constants::{ADVENTURES, TRAVITIA_FONT},
-    encoder::encode_webp,
-    error::Result,
-    proxy::Fetcher,
-};
-
 use ab_glyph::PxScale;
 use hyper::{Body, Response};
 use image::Rgb;
@@ -12,6 +5,13 @@ use imageproc::drawing::draw_text_mut;
 use serde::Deserialize;
 
 use std::sync::Arc;
+
+use crate::{
+    constants::{ADVENTURES, TRAVITIA_FONT},
+    encoder::encode_png,
+    error::Result,
+    proxy::Fetcher,
+};
 
 #[derive(Deserialize)]
 pub struct AdventuresJson {
@@ -52,7 +52,7 @@ pub async fn genadventures(body: &AdventuresJson, fetcher: Arc<Fetcher>) -> Resu
             &format!("{}%", chance_max),
         );
 
-        let buf = encode_webp(&new_image);
+        let buf = encode_png(&new_image)?;
 
         images.push(buf);
     }

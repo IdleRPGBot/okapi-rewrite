@@ -1,11 +1,11 @@
-use crate::{encoder::encode_webp, error::Result};
-
 use hyper::{Body, Response};
 use image::RgbaImage;
 use resvg::render;
 use serde::Deserialize;
 use tiny_skia::Pixmap;
 use usvg::{FitTo, Tree};
+
+use crate::{encoder::encode_png, error::Result};
 
 #[derive(Deserialize)]
 pub struct ChessJson {
@@ -23,10 +23,10 @@ pub fn genchess(body: &ChessJson) -> Result<Response<Body>> {
     let vect = map.take();
     // SAFETY: Only returns None if container too small
     let image = RgbaImage::from_raw(390, 390, vect).unwrap();
-    let final_image = encode_webp(&image);
+    let final_image = encode_png(&image)?;
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/webp")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))?)
 }

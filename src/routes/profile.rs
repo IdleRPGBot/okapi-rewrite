@@ -1,6 +1,6 @@
 use crate::{
     constants::{CASTS, DEFAULT_PROFILE, TRAVITIA_FONT},
-    encoder::encode_webp,
+    encoder::encode_png,
     error::Result,
     proxy::Fetcher,
 };
@@ -322,10 +322,10 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Result<Resp
         }
     }
 
-    let final_image = encode_webp(&blend.0);
+    let final_image = encode_png(&blend.0)?;
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/webp")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))?)
 }

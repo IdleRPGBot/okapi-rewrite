@@ -1,14 +1,16 @@
-use crate::{encoder::encode_webp, error::Result, proxy::Fetcher};
-
 use hyper::{Body, Response};
-use image::{
-    imageops::{invert, resize, FilterType},
-    load_from_memory, Pixel, Rgba,
-};
+use image::{imageops::invert, load_from_memory, Pixel, Rgba};
 use imageproc::edges::canny;
 use serde::Deserialize;
 
 use std::{collections::HashMap, sync::Arc};
+
+use crate::{
+    encoder::encode_png,
+    error::Result,
+    proxy::Fetcher,
+    resize::{resize, FilterType},
+};
 
 #[derive(Deserialize)]
 pub struct ImageJson {
@@ -24,13 +26,13 @@ struct Intensity {
 
 pub async fn pixelate(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
-    let img = load_from_memory(&res)?.to_rgba8();
-    let buf = resize(&img, 1024, 1024, FilterType::Nearest);
-    let final_image = encode_webp(&buf);
+    let img = load_from_memory(&res)?;
+    let buf = resize(img, 1024, 1024, FilterType::Box);
+    let final_image = encode_png(&buf)?;
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/webp")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))?)
 }
 
@@ -38,11 +40,11 @@ pub async fn invert_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<R
     let res = fetcher.fetch(&body.image).await?;
     let mut img = load_from_memory(&res)?.to_rgba8();
     invert(&mut img);
-    let final_image = encode_webp(&img);
+    let final_image = encode_png(&img)?;
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/webp")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))?)
 }
 
@@ -50,11 +52,11 @@ pub async fn edges_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Re
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?.to_luma8();
     let buf = canny(&img, 25.0, 80.0);
-    let final_image = encode_webp(&buf);
+    let final_image = encode_png(&buf)?;
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/webp")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))?)
 }
 
@@ -135,10 +137,10 @@ pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Resp
         }
     }
 
-    let final_image = encode_webp(&target);
+    let final_image = encode_png(&target)?;
 
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/webp")
+        .header("content-type", "image/png")
         .body(Body::from(final_image))?)
 }
