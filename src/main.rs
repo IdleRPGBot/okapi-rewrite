@@ -66,13 +66,13 @@ async fn handle(
     let query = parts.uri.query();
     let method = parts.method;
 
-    let authorization = parts.headers.get("authorization");
-
     if method == Method::POST {
-        if let (Some(client_auth), Some(server_auth)) =
-            (authorization, constants::AUTH_KEY.as_ref())
-        {
-            if client_auth.as_bytes() != server_auth.as_bytes() {
+        if let Some(server_auth) = constants::AUTH_KEY.as_ref() {
+            if let Some(client_auth) = parts.headers.get("authorization") {
+                if client_auth != server_auth {
+                    return Ok(Response::builder().status(403).body(Body::empty()).unwrap());
+                }
+            } else {
                 return Ok(Response::builder().status(403).body(Body::empty()).unwrap());
             }
         }
