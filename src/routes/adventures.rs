@@ -19,10 +19,7 @@ pub struct AdventuresJson {
 const WHITE: Rgb<u8> = Rgb([0, 0, 0]);
 const SCALE: PxScale = PxScale { x: 20.0, y: 20.0 };
 
-pub async fn genadventures(
-    body: &AdventuresJson,
-    images: ImageCache,
-) -> Result<Response<Body>> {
+pub async fn genadventures(body: &AdventuresJson, images: ImageCache) -> Result<Response<Body>> {
     let mut buffers: Vec<Vec<u8>> = Vec::with_capacity(30);
 
     for idx in 0..30 {
