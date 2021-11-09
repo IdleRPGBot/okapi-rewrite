@@ -8,6 +8,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::constants::EXTERNAL_URL;
+
 fn random_identifier() -> String {
     let mut rng = thread_rng();
     iter::repeat(())
@@ -57,6 +59,6 @@ impl ImageCache {
         let identifier = random_identifier();
         self.0.insert(identifier.clone(), (image, Instant::now()));
 
-        identifier
+        format!("{}/image?image={}", *EXTERNAL_URL, identifier)
     }
 }

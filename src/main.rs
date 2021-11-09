@@ -17,16 +17,11 @@ use libc::{c_int, sighandler_t, signal, SIGINT, SIGTERM};
 use log::{error, info};
 use serde::Deserialize;
 
-use std::{
-    convert::Infallible,
-    env::{set_var, var},
-    net::SocketAddr,
-    sync::Arc,
-    time::Instant,
-};
+use std::{convert::Infallible, env::set_var, net::SocketAddr, sync::Arc, time::Instant};
 
 use crate::{
     cache::ImageCache,
+    constants::PORT,
     routes::{
         adventures::genadventures,
         chess::genchess,
@@ -154,10 +149,7 @@ async fn main() {
 
     env_logger::init();
 
-    let listen_address = match var("PORT") {
-        Ok(p) => SocketAddr::from(([0, 0, 0, 0], p.parse().unwrap())),
-        Err(_) => SocketAddr::from(([0, 0, 0, 0], 3000)),
-    };
+    let listen_address = SocketAddr::from(([0, 0, 0, 0], *PORT));
 
     info!("okapi starting on {}", listen_address);
 

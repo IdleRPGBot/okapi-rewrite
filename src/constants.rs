@@ -7,11 +7,16 @@ use std::{collections::HashMap, env::var, str::FromStr};
 use crate::resize::{resize, FilterType};
 
 lazy_static! {
-    pub static ref RENDERER_KEY: Vec<u8> = var("RENDERER_KEY").unwrap().as_bytes().to_vec();
+    pub static ref PORT: u16 = var("PORT")
+        .unwrap_or_else(|_| String::from("3000"))
+        .parse::<u16>()
+        .unwrap();
     pub static ref PROXY_URL: Option<Uri> =
         var("PROXY_URL").ok().map(|p| Uri::from_str(&p).unwrap());
     pub static ref PROXY_AUTH: Option<String> = var("PROXY_AUTH").ok();
     pub static ref AUTH_KEY: Option<String> = var("AUTH_KEY").ok();
+    pub static ref EXTERNAL_URL: String =
+        var("EXTERNAL_URL").unwrap_or(format!("http://localhost:{}", *PORT));
     pub static ref TRAVITIA_FONT: FontVec =
         FontVec::try_from_vec(include_bytes!("../assets/fonts/MergedNoKern.otf").to_vec())
             .expect("could not load font");
