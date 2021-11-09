@@ -1,4 +1,5 @@
 use crate::{
+    cache::ImageCache,
     constants::{CASTS, DEFAULT_PROFILE, TRAVITIA_FONT},
     encoder::encode_png,
     error::Result,
@@ -48,7 +49,11 @@ const PX_19: PxScale = PxScale { x: 19.0, y: 19.0 };
 const PX_22_CONDENSED: PxScale = PxScale { x: 15.0, y: 22.0 };
 const PX_45_CONDENSED: PxScale = PxScale { x: 35.0, y: 45.0 };
 
-pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
+pub async fn genprofile(
+    body: ProfileJson,
+    fetcher: Arc<Fetcher>,
+    images: ImageCache,
+) -> Result<Response<Body>> {
     let image_url = &body.image;
 
     let mut img = if image_url == "0" {
@@ -324,8 +329,10 @@ pub async fn genprofile(body: ProfileJson, fetcher: Arc<Fetcher>) -> Result<Resp
 
     let final_image = encode_png(&blend.0)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }

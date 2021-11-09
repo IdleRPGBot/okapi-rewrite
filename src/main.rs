@@ -15,14 +15,7 @@ use hyper::{
 };
 use libc::{c_int, sighandler_t, signal, SIGINT, SIGTERM};
 use log::{error, info};
-use routes::{
-    adventures::genadventures,
-    chess::genchess,
-    imageops::{edges_endpoint, invert_endpoint, oil_endpoint, pixelate},
-    index::index,
-    overlay::genoverlay,
-    profile::genprofile,
-};
+use serde::Deserialize;
 
 use std::{
     convert::Infallible,
@@ -32,49 +25,98 @@ use std::{
     time::Instant,
 };
 
+use crate::{
+    cache::ImageCache,
+    routes::{
+        adventures::genadventures,
+        chess::genchess,
+        imageops::{edges_endpoint, invert_endpoint, oil_endpoint, pixelate},
+        index::index,
+        overlay::genoverlay,
+        profile::genprofile,
+    },
+};
+
+pub mod cache;
 pub mod constants;
 pub mod encoder;
 pub mod error;
 pub mod proxy;
 pub mod resize;
 pub mod routes;
-pub mod webp;
+
+#[derive(Deserialize)]
+struct GetImage {
+    image: String,
+}
 
 async fn handle(
     request: Request<Body>,
     fetcher: Arc<proxy::Fetcher>,
+    images: ImageCache,
 ) -> Result<Response<Body>, Error> {
     let start = Instant::now();
-    let path = request.uri().path().to_owned();
-    let method = request.method().clone();
-    let body = hyper::body::aggregate(request).await?;
+
+    let (parts, body) = request.into_parts();
+
+    let body = hyper::body::aggregate(body).await?;
     let reader = body.reader();
 
-    let response: error::Result<Response<Body>> = async {
-        match (&method, path.as_str()) {
-            (&Method::POST, "/api/genadventures") => {
-                genadventures(&serde_json::from_reader(reader)?, fetcher).await
+    let path = parts.uri.path();
+    let query = parts.uri.query();
+    let method = parts.method;
+
+    let authorization = parts.headers.get("authorization");
+
+    if method == Method::POST {
+        if let (Some(client_auth), Some(server_auth)) =
+            (authorization, constants::AUTH_KEY.as_ref())
+        {
+            if client_auth.as_bytes() != server_auth.as_bytes() {
+                return Ok(Response::builder().status(403).body(Body::empty()).unwrap());
             }
-            (&Method::POST, "/api/genchess") => genchess(&serde_json::from_reader(reader)?),
+        }
+    }
+
+    let response: error::Result<Response<Body>> = async {
+        match (&method, path) {
+            (&Method::POST, "/api/genadventures") => {
+                genadventures(&serde_json::from_reader(reader)?, images).await
+            }
+            (&Method::POST, "/api/genchess") => genchess(&serde_json::from_reader(reader)?, images),
             (&Method::POST, "/api/imageops/pixel") => {
-                pixelate(serde_json::from_reader(reader)?, fetcher).await
+                pixelate(serde_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/imageops/invert") => {
-                invert_endpoint(serde_json::from_reader(reader)?, fetcher).await
+                invert_endpoint(serde_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/imageops/edges") => {
-                edges_endpoint(serde_json::from_reader(reader)?, fetcher).await
+                edges_endpoint(serde_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/imageops/oil") => {
-                oil_endpoint(serde_json::from_reader(reader)?, fetcher).await
+                oil_endpoint(serde_json::from_reader(reader)?, fetcher, images).await
             }
-            (&Method::GET, "/") => index(),
             (&Method::POST, "/api/genoverlay") => {
-                genoverlay(serde_json::from_reader(reader)?, fetcher).await
+                genoverlay(serde_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/genprofile") => {
-                genprofile(serde_json::from_reader(reader)?, fetcher).await
+                genprofile(serde_json::from_reader(reader)?, fetcher, images).await
             }
+            (&Method::GET, "/") => index(),
+            (&Method::GET, "/image") => match query {
+                Some(query) => match serde_urlencoded::from_str::<GetImage>(query) {
+                    Ok(get_image) => match images.get(&get_image.image) {
+                        Some(image) => Ok(Response::builder()
+                            .status(200)
+                            .header("Content-Type", "image/png")
+                            .body(Body::from(image))
+                            .unwrap()),
+                        None => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
+                    },
+                    Err(_) => Ok(Response::builder().status(400).body(Body::empty()).unwrap()),
+                },
+                None => Ok(Response::builder().status(400).body(Body::empty()).unwrap()),
+            },
             _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
         }
     }
@@ -109,18 +151,28 @@ async fn main() {
     unsafe { set_os_handlers() };
 
     set_var("RUST_LOG", "info");
+
     env_logger::init();
+
     let listen_address = match var("PORT") {
         Ok(p) => SocketAddr::from(([0, 0, 0, 0], p.parse().unwrap())),
         Err(_) => SocketAddr::from(([0, 0, 0, 0], 3000)),
     };
+
     info!("okapi starting on {}", listen_address);
 
     let client = Arc::new(proxy::Fetcher::new());
+    let images = ImageCache::new();
 
     let make_service = make_service_fn(|_conn| {
         let client = client.clone();
-        async { Ok::<_, Infallible>(service_fn(move |req| handle(req, client.clone()))) }
+        let images = images.clone();
+
+        async {
+            Ok::<_, Infallible>(service_fn(move |req| {
+                handle(req, client.clone(), images.clone())
+            }))
+        }
     });
 
     let server = Server::bind(&listen_address).serve(make_service);

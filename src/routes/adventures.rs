@@ -4,13 +4,11 @@ use image::Rgb;
 use imageproc::drawing::draw_text_mut;
 use serde::Deserialize;
 
-use std::sync::Arc;
-
 use crate::{
+    cache::ImageCache,
     constants::{ADVENTURES, TRAVITIA_FONT},
     encoder::encode_png,
     error::Result,
-    proxy::Fetcher,
 };
 
 #[derive(Deserialize)]
@@ -21,8 +19,11 @@ pub struct AdventuresJson {
 const WHITE: Rgb<u8> = Rgb([0, 0, 0]);
 const SCALE: PxScale = PxScale { x: 20.0, y: 20.0 };
 
-pub async fn genadventures(body: &AdventuresJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
-    let mut images: Vec<Vec<u8>> = Vec::with_capacity(30);
+pub async fn genadventures(
+    body: &AdventuresJson,
+    images: ImageCache,
+) -> Result<Response<Body>> {
+    let mut buffers: Vec<Vec<u8>> = Vec::with_capacity(30);
 
     for idx in 0..30 {
         let current_chances = &body.percentages[idx];
@@ -54,13 +55,16 @@ pub async fn genadventures(body: &AdventuresJson, fetcher: Arc<Fetcher>) -> Resu
 
         let buf = encode_png(&new_image)?;
 
-        images.push(buf);
+        buffers.push(buf);
     }
 
-    let tags = fetcher.upload_images(images).await?;
+    let mut tags = Vec::with_capacity(30);
+    for image in buffers {
+        tags.push(images.insert(image));
+    }
 
     Ok(Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(Body::from(tags))?)
+        .body(Body::from(format!("{:?}", tags)))?)
 }

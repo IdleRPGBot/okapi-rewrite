@@ -5,14 +5,14 @@ use serde::Deserialize;
 use tiny_skia::Pixmap;
 use usvg::{FitTo, Tree};
 
-use crate::{encoder::encode_png, error::Result};
+use crate::{cache::ImageCache, encoder::encode_png, error::Result};
 
 #[derive(Deserialize)]
 pub struct ChessJson {
     xml: String, // SVG
 }
 
-pub fn genchess(body: &ChessJson) -> Result<Response<Body>> {
+pub fn genchess(body: &ChessJson, images: ImageCache) -> Result<Response<Body>> {
     let xml = &body.xml;
     let tree = Tree::from_str(xml, &usvg::Options::default().to_ref())?;
 
@@ -25,8 +25,10 @@ pub fn genchess(body: &ChessJson) -> Result<Response<Body>> {
     let image = RgbaImage::from_raw(390, 390, vect).unwrap();
     let final_image = encode_png(&image)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }

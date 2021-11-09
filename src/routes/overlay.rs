@@ -8,6 +8,7 @@ use serde::Deserialize;
 use std::{io::Cursor, sync::Arc};
 
 use crate::{
+    cache::ImageCache,
     constants::PROFILE,
     encoder::encode_png,
     error::Result,
@@ -20,7 +21,11 @@ pub struct OverlayJson {
     url: String,
 }
 
-pub async fn genoverlay(body: OverlayJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
+pub async fn genoverlay(
+    body: OverlayJson,
+    fetcher: Arc<Fetcher>,
+    images: ImageCache,
+) -> Result<Response<Body>> {
     let mut limits = Limits::default();
     limits.max_image_width = Some(2000);
     limits.max_image_height = Some(2000);
@@ -39,8 +44,10 @@ pub async fn genoverlay(body: OverlayJson, fetcher: Arc<Fetcher>) -> Result<Resp
 
     let final_image = encode_png(&img)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }

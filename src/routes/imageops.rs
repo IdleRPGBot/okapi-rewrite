@@ -6,6 +6,7 @@ use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
+    cache::ImageCache,
     encoder::encode_png,
     error::Result,
     proxy::Fetcher,
@@ -24,43 +25,65 @@ struct Intensity {
     b: i32,
 }
 
-pub async fn pixelate(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
+pub async fn pixelate(
+    body: ImageJson,
+    fetcher: Arc<Fetcher>,
+    images: ImageCache,
+) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?;
     let buf = resize(img, 1024, 1024, FilterType::Box);
     let final_image = encode_png(&buf)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }
 
-pub async fn invert_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
+pub async fn invert_endpoint(
+    body: ImageJson,
+    fetcher: Arc<Fetcher>,
+    images: ImageCache,
+) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let mut img = load_from_memory(&res)?.to_rgba8();
     invert(&mut img);
     let final_image = encode_png(&img)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }
 
-pub async fn edges_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
+pub async fn edges_endpoint(
+    body: ImageJson,
+    fetcher: Arc<Fetcher>,
+    images: ImageCache,
+) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?.to_luma8();
     let buf = canny(&img, 25.0, 80.0);
     let final_image = encode_png(&buf)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }
 
-pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Response<Body>> {
+pub async fn oil_endpoint(
+    body: ImageJson,
+    fetcher: Arc<Fetcher>,
+    images: ImageCache,
+) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?.to_rgba8();
 
@@ -139,8 +162,10 @@ pub async fn oil_endpoint(body: ImageJson, fetcher: Arc<Fetcher>) -> Result<Resp
 
     let final_image = encode_png(&target)?;
 
+    let tag = images.insert(final_image);
+
     Ok(Response::builder()
         .status(200)
-        .header("content-type", "image/png")
-        .body(Body::from(final_image))?)
+        .header("content-type", "text/plain")
+        .body(Body::from(tag))?)
 }
