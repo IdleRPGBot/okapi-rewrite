@@ -1,6 +1,6 @@
 use image::{
     codecs::png::{CompressionType, FilterType, PngEncoder},
-    ImageBuffer, ImageError, Pixel, PixelWithColorType,
+    ImageBuffer, ImageEncoder, ImageError, Pixel, PixelWithColorType,
 };
 
 use std::ops::Deref;
@@ -12,6 +12,6 @@ where
 {
     let mut buf = Vec::new();
     let encoder = PngEncoder::new_with_quality(&mut buf, CompressionType::Fast, FilterType::Sub);
-    encoder.encode(img, img.width(), img.height(), P::COLOR_TYPE)?;
+    encoder.write_image(img, img.width(), img.height(), P::COLOR_TYPE)?;
     Ok(buf)
 }
