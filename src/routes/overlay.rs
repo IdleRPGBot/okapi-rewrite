@@ -1,6 +1,6 @@
 use hyper::{Body, Response};
 use image::{
-    imageops::overlay,
+    imageops::{overlay, resize, FilterType},
     io::{Limits, Reader},
 };
 use serde::Deserialize;
@@ -9,16 +9,16 @@ use std::{io::Cursor, sync::Arc};
 
 use crate::{
     cache::ImageCache,
-    constants::PROFILE,
+    constants::{PROFILE_DARK, PROFILE_LIGHT},
     encoder::encode_png,
     error::Result,
     proxy::Fetcher,
-    resize::{resize, FilterType},
 };
 
 #[derive(Deserialize)]
 pub struct OverlayJson {
     url: String,
+    style: String,
 }
 
 pub async fn genoverlay(
@@ -39,8 +39,13 @@ pub async fn genoverlay(
     let img = reader.decode()?;
 
     // Lanczos3 is best, but has slow speed
-    let mut img = resize(img, 800, 650, FilterType::Lanczos3);
-    overlay(&mut img, &PROFILE.clone(), 0, 0);
+    let mut img = resize(&img, 800, 533, FilterType::Lanczos3);
+
+    if body.style == "dark" {
+        overlay(&mut img, &PROFILE_DARK.clone(), 0, 0);
+    } else if body.style == "light" {
+        overlay(&mut img, &PROFILE_LIGHT.clone(), 0, 0);
+    }
 
     let final_image = encode_png(&img)?;
 

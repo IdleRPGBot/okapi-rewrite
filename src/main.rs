@@ -37,7 +37,6 @@ pub mod constants;
 pub mod encoder;
 pub mod error;
 pub mod proxy;
-pub mod resize;
 pub mod routes;
 
 #[derive(Deserialize)]

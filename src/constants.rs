@@ -1,10 +1,11 @@
 use ab_glyph::FontVec;
 use hyper::Uri;
-use image::{load_from_memory, RgbImage, RgbaImage};
+use image::{
+    imageops::{resize, FilterType},
+    load_from_memory, RgbImage, RgbaImage,
+};
 use lazy_static::lazy_static;
 use std::{collections::HashMap, env::var, str::FromStr};
-
-use crate::resize::{resize, FilterType};
 
 lazy_static! {
     pub static ref PORT: u16 = var("PORT")
@@ -20,68 +21,245 @@ lazy_static! {
     pub static ref TRAVITIA_FONT: FontVec =
         FontVec::try_from_vec(include_bytes!("../assets/fonts/MergedNoKern.otf").to_vec())
             .expect("could not load font");
-    pub static ref PROFILE: RgbaImage =
-        load_from_memory(include_bytes!("../assets/images/ProfileOverlayNew.png"))
+    pub static ref PROFILE_DARK: RgbaImage =
+        load_from_memory(include_bytes!("../assets/images/profile_overlay_dark.png"))
             .expect("Could not load image")
             .into_rgba8();
+    pub static ref PROFILE_LIGHT: RgbaImage =
+            load_from_memory(include_bytes!("../assets/images/profile_overlay_light.png"))
+                .expect("Could not load image")
+                .into_rgba8();
     pub static ref DEFAULT_PROFILE: RgbaImage =
-        load_from_memory(include_bytes!("../assets/images/ProfileNew.png"))
+        load_from_memory(include_bytes!("../assets/images/profile.png"))
             .expect("Could not load image")
             .into_rgba8();
-    pub static ref CASTS: HashMap<String, RgbaImage> = {
-        let mut all_casts = HashMap::new();
-        all_casts.insert(
-            "thief",
-            include_bytes!("../assets/images/casts/thief.png").to_vec(),
-        );
-        all_casts.insert(
-            "paragon",
-            include_bytes!("../assets/images/casts/paragon.png").to_vec(),
-        );
-        all_casts.insert(
-            "ranger",
-            include_bytes!("../assets/images/casts/ranger.png").to_vec(),
-        );
-        all_casts.insert(
-            "warrior",
-            include_bytes!("../assets/images/casts/warrior.png").to_vec(),
-        );
-        all_casts.insert(
-            "mage",
-            include_bytes!("../assets/images/casts/mage.png").to_vec(),
-        );
-        all_casts.insert(
-            "raider",
-            include_bytes!("../assets/images/casts/raider.png").to_vec(),
-        );
-        all_casts.insert(
-            "ritualist",
-            include_bytes!("../assets/images/casts/ritualist.png").to_vec(),
-        );
-        all_casts.insert(
+    pub static ref RACES: HashMap<String, RgbaImage> = {
+        let mut all_races = HashMap::new();
+
+        all_races.insert(
             "human",
             include_bytes!("../assets/images/casts/human.png").to_vec(),
         );
-        all_casts.insert(
+        all_races.insert(
             "elf",
             include_bytes!("../assets/images/casts/elf.png").to_vec(),
         );
-        all_casts.insert(
+        all_races.insert(
             "dwarf",
             include_bytes!("../assets/images/casts/dwarf.png").to_vec(),
         );
-        all_casts.insert(
+        all_races.insert(
             "orc",
             include_bytes!("../assets/images/casts/orc.png").to_vec(),
         );
-        all_casts.insert(
+        all_races.insert(
             "jikill",
             include_bytes!("../assets/images/casts/jikill.png").to_vec(),
         );
 
         let mut map: HashMap<String, RgbaImage> = HashMap::new();
-        for (cast_name, bytes) in &all_casts {
+        for (cast_name, bytes) in &all_races {
             map.insert(
+                (*cast_name).to_string(),
+                resize(
+                    &load_from_memory(bytes).expect("Could not load image"),
+                    60,
+                    60,
+                    FilterType::Lanczos3,
+                ),
+            );
+        }
+        map
+    };
+    pub static ref CLASSES: HashMap<String, RgbaImage> = {
+        let mut all_classes = HashMap::new();
+
+        all_classes.insert(
+            "thief",
+            include_bytes!("../assets/images/casts/thief.png").to_vec(),
+        );
+        all_classes.insert(
+            "paragon",
+            include_bytes!("../assets/images/casts/paragon.png").to_vec(),
+        );
+        all_classes.insert(
+            "ranger",
+            include_bytes!("../assets/images/casts/ranger.png").to_vec(),
+        );
+        all_classes.insert(
+            "warrior",
+            include_bytes!("../assets/images/casts/warrior.png").to_vec(),
+        );
+        all_classes.insert(
+            "mage",
+            include_bytes!("../assets/images/casts/mage.png").to_vec(),
+        );
+        all_classes.insert(
+            "raider",
+            include_bytes!("../assets/images/casts/raider.png").to_vec(),
+        );
+        all_classes.insert(
+            "ritualist",
+            include_bytes!("../assets/images/casts/ritualist.png").to_vec(),
+        );
+
+        let mut map: HashMap<String, RgbaImage> = HashMap::new();
+        for (cast_name, bytes) in &all_classes {
+            map.insert(
+                (*cast_name).to_string(),
+                resize(
+                    &load_from_memory(bytes).expect("Could not load image"),
+                    60,
+                    60,
+                    FilterType::Lanczos3,
+                ),
+            );
+        }
+        map
+    };
+    pub static ref GUILD_RANKS: HashMap<String, RgbaImage> = {
+        let mut all_ranks = HashMap::new();
+
+        all_ranks.insert(
+            "leader",
+            include_bytes!("../assets/images/casts/leader.png").to_vec(),
+        );
+        all_ranks.insert(
+            "officer",
+            include_bytes!("../assets/images/casts/officer.png").to_vec(),
+        );
+        all_ranks.insert(
+            "member",
+            include_bytes!("../assets/images/casts/member.png").to_vec(),
+        );
+
+        let mut map: HashMap<String, RgbaImage> = HashMap::new();
+        for (cast_name, bytes) in &all_ranks {
+            map.insert(
+                (*cast_name).to_string(),
+                resize(
+                    &load_from_memory(bytes).expect("Could not load image"),
+                    55,
+                    55,
+                    FilterType::Lanczos3,
+                ),
+            );
+        }
+        map
+    };
+    pub static ref ITEM_TYPES: HashMap<String, RgbaImage> = {
+        let mut all_items = HashMap::new();
+
+        all_items.insert(
+            "sword",
+            include_bytes!("../assets/images/casts/sword.png").to_vec(),
+        );
+        all_items.insert(
+            "shield",
+            include_bytes!("../assets/images/casts/shield.png").to_vec(),
+        );
+        all_items.insert(
+            "knife",
+            include_bytes!("../assets/images/casts/knife.png").to_vec(),
+        );
+        all_items.insert(
+            "dagger",
+            include_bytes!("../assets/images/casts/dagger.png").to_vec(),
+        );
+        all_items.insert(
+            "spear",
+            include_bytes!("../assets/images/casts/spear.png").to_vec(),
+        );
+        all_items.insert(
+            "hammer",
+            include_bytes!("../assets/images/casts/hammer.png").to_vec(),
+        );
+        all_items.insert(
+            "axe",
+            include_bytes!("../assets/images/casts/axe.png").to_vec(),
+        );
+        all_items.insert(
+            "bow",
+            include_bytes!("../assets/images/casts/bow.png").to_vec(),
+        );
+        all_items.insert(
+            "howlet",
+            include_bytes!("../assets/images/casts/howlet.png").to_vec(),
+        );
+        all_items.insert(
+            "scythe",
+            include_bytes!("../assets/images/casts/scythe.png").to_vec(),
+        );
+        all_items.insert(
+            "wand",
+            include_bytes!("../assets/images/casts/wand.png").to_vec(),
+        );
+
+        let mut map: HashMap<String, RgbaImage> = HashMap::new();
+        for (cast_name, bytes) in &all_items {
+            map.insert(
+                (*cast_name).to_string(),
+                resize(
+                    &load_from_memory(bytes).expect("Could not load image"),
+                    80,
+                    80,
+                    FilterType::Lanczos3,
+                ),
+            );
+        }
+        map
+    };
+    pub static ref BADGES: HashMap<String, RgbaImage> = {
+        let mut all_badges = HashMap::new();
+
+        all_badges.insert(
+            "contributor",
+            include_bytes!("../assets/images/casts/contributor.png").to_vec(),
+        );
+        all_badges.insert(
+            "designer",
+            include_bytes!("../assets/images/casts/designer.png").to_vec(),
+        );
+        all_badges.insert(
+            "developer",
+            include_bytes!("../assets/images/casts/developer.png").to_vec(),
+        );
+        all_badges.insert(
+            "gamedesigner",
+            include_bytes!("../assets/images/casts/gamedesigner.png").to_vec(),
+        );
+        all_badges.insert(
+            "gamemaster",
+            include_bytes!("../assets/images/casts/gamemaster.png").to_vec(),
+        );
+        all_badges.insert(
+            "leader",
+            include_bytes!("../assets/images/casts/leader.png").to_vec(),
+        );
+        all_badges.insert(
+            "member",
+            include_bytes!("../assets/images/casts/member.png").to_vec(),
+        );
+        all_badges.insert(
+            "officer",
+            include_bytes!("../assets/images/casts/officer.png").to_vec(),
+        );
+        all_badges.insert(
+            "support",
+            include_bytes!("../assets/images/casts/support.png").to_vec(),
+        );
+        all_badges.insert(
+            "tester",
+            include_bytes!("../assets/images/casts/tester.png").to_vec(),
+        );
+        all_badges.insert(
+            "veteran",
+            include_bytes!("../assets/images/casts/veteran.png").to_vec(),
+        );
+
+        let mut map: HashMap<String, RgbaImage> = HashMap::new();
+        for (cast_name, bytes) in &all_badges {
+            /*map.insert(
                 (*cast_name).to_string(),
                 resize(
                     load_from_memory(bytes).expect("Could not load image"),
@@ -89,6 +267,10 @@ lazy_static! {
                     22,
                     FilterType::Lanczos3,
                 ),
+            );*/
+            map.insert(
+                (*cast_name).to_string(),
+                load_from_memory(bytes).expect("Could not load image").into_rgba8(),
             );
         }
         map

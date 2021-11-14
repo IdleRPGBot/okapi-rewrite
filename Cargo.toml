@@ -9,7 +9,6 @@ ab_glyph = "0.2"
 bytes = "1.0"
 dashmap = "4.0"
 env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty"] }
-fast_image_resize = { git = "https://github.com/Gelbpunkt/fast_image_resize.git" }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
 hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2"] }
 image = { version = "0.24.0-alpha", default-features = false, features = [
@@ -25,7 +24,6 @@ resvg = { version = "0.19", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7"
-textwrap = { version = "0.14", default-features = false }
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
 tiny-skia = { version = "0.6", default-features = false }
 usvg = { version = "0.19", default-features = false }

@@ -1,6 +1,6 @@
 use crate::{
     cache::ImageCache,
-    constants::{CASTS, DEFAULT_PROFILE, TRAVITIA_FONT},
+    constants::{CLASSES, DEFAULT_PROFILE, GUILD_RANKS, ITEM_TYPES, RACES, TRAVITIA_FONT},
     encoder::encode_png,
     error::Result,
     proxy::Fetcher,
@@ -15,7 +15,6 @@ use image::{
 };
 use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
-use textwrap::wrap;
 
 use std::{io::Cursor, sync::Arc};
 
@@ -25,29 +24,25 @@ pub struct ProfileJson {
     image: String,
     race: String,
     color: (u8, u8, u8, f32), // RGBA
-    classes: Vec<String>,     // Array of Strings
-    damage: String,
-    defense: String,
-    sword_name: String,
-    shield_name: String,
-    level: String, // might wanna make it u8
+    classes: Vec<String>,
+    class_icons: Vec<String>,
+    left_hand_item: Option<(String, String, String)>, // Type, Name, Stat
+    right_hand_item: Option<(String, String, String)>, // Type, Name, Stat
+    level: String,
+    guild_rank: Option<String>,
+    guild_name: Option<String>,
+    marriage: Option<String>,
     money: String,
-    god: String,
-    guild: String,
-    marriage: String,
     pvp_wins: String,
-    adventure: String,
-    icons: Vec<String>, // Array of Strings
+    god: String,
+    adventure_name: Option<String>,
+    adventure_time: Option<String>,
 }
 
 const PX_52: PxScale = PxScale { x: 52.0, y: 52.0 };
 const PX_34: PxScale = PxScale { x: 34.0, y: 34.0 };
-const PX_26: PxScale = PxScale { x: 26.0, y: 26.0 };
-const PX_23: PxScale = PxScale { x: 23.0, y: 23.0 };
+const PX_30: PxScale = PxScale { x: 30.0, y: 30.0 };
 const PX_22: PxScale = PxScale { x: 22.0, y: 22.0 };
-const PX_19: PxScale = PxScale { x: 19.0, y: 19.0 };
-const PX_22_CONDENSED: PxScale = PxScale { x: 15.0, y: 22.0 };
-const PX_45_CONDENSED: PxScale = PxScale { x: 35.0, y: 45.0 };
 
 pub async fn genprofile(
     body: ProfileJson,
@@ -70,17 +65,29 @@ pub async fn genprofile(
         reader.decode()?.to_rgba8()
     };
 
-    overlay(&mut img, &CASTS[&body.race.to_lowercase()], 205, 184);
+    overlay(&mut img, &RACES[&body.race.to_lowercase()], 6, 150);
 
-    let icon_1 = &body.icons[0];
-    let icon_2 = &body.icons[1];
+    let class_icon_1 = &body.class_icons[0];
+    let class_icon_2 = &body.class_icons[1];
 
-    if icon_1 != "none" {
-        overlay(&mut img, &CASTS[icon_1], 205, 232);
+    if class_icon_1 != "none" {
+        overlay(&mut img, &CLASSES[class_icon_1], 6, 244);
     }
 
-    if icon_2 != "none" {
-        overlay(&mut img, &CASTS[icon_2], 205, 254);
+    if class_icon_2 != "none" {
+        overlay(&mut img, &CLASSES[class_icon_2], 6, 300);
+    }
+
+    if let Some(rank) = body.guild_rank {
+        overlay(&mut img, &GUILD_RANKS[&rank.to_lowercase()], 610, 3);
+    }
+
+    if let Some((item_type, _, _)) = &body.right_hand_item {
+        overlay(&mut img, &ITEM_TYPES[&item_type.to_lowercase()], 262, 117);
+    }
+
+    if let Some((item_type, _, _)) = &body.left_hand_item {
+        overlay(&mut img, &ITEM_TYPES[&item_type.to_lowercase()], 262, 188);
     }
 
     let mut blend = Blend(img);
@@ -91,240 +98,189 @@ pub async fn genprofile(
     let a = (body.color.3 * 255.0) as u8;
     let color = Rgba([r, g, b, a]);
 
+    let character_name = if let Some(guild_name) = body.guild_name {
+        format!("{} of {}", body.name, guild_name)
+    } else {
+        body.name
+    };
+
     draw_text_mut(
         &mut blend,
         color,
-        221,
-        143,
-        PX_26,
-        130,
+        12,
+        12,
+        PX_52,
+        550,
         &*TRAVITIA_FONT,
-        &body.name,
+        &character_name,
     );
+
     draw_text_mut(
         &mut blend,
         color,
-        228,
-        185,
-        PX_26,
-        130,
-        &*TRAVITIA_FONT,
-        &body.race,
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        228,
-        235,
-        PX_23,
-        130,
-        &*TRAVITIA_FONT,
-        &body.classes[0],
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        228,
-        259,
-        PX_23,
-        130,
-        &*TRAVITIA_FONT,
-        &body.classes[1],
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        111,
-        295,
-        PX_22_CONDENSED,
-        95,
-        &*TRAVITIA_FONT,
-        &body.damage,
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        111,
-        337,
-        PX_22_CONDENSED,
-        95,
-        &*TRAVITIA_FONT,
-        &body.defense,
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        284,
-        295,
-        PX_22,
-        60,
+        720,
+        16,
+        PX_52,
+        70,
         &*TRAVITIA_FONT,
         &body.level,
     );
+
+    if let Some(marriage) = body.marriage {
+        let text = format!("married to {}", marriage);
+
+        draw_text_mut(
+            &mut blend,
+            color,
+            180,
+            76,
+            PX_22,
+            500,
+            &*TRAVITIA_FONT,
+            &text,
+        );
+    }
+
     draw_text_mut(
         &mut blend,
         color,
-        284,
-        337,
-        PX_22,
-        60,
+        70,
+        168,
+        PX_34,
+        160,
         &*TRAVITIA_FONT,
-        "soon\u{2122}",
+        &body.race,
     );
 
-    if body.sword_name.len() < 18 {
-        draw_text_mut(
-            &mut blend,
-            color,
-            165,
-            495,
-            PX_45_CONDENSED,
-            200,
-            &*TRAVITIA_FONT,
-            &body.sword_name,
-        );
-    } else {
-        let rows = wrap(&body.sword_name, 26);
-        for (i, line) in rows.iter().enumerate() {
-            draw_text_mut(
-                &mut blend,
-                color,
-                165,
-                495 + ((i as i32) * 20),
-                PX_19,
-                200,
-                &*TRAVITIA_FONT,
-                line,
-            );
-        }
-    }
+    draw_text_mut(
+        &mut blend,
+        color,
+        70,
+        263,
+        PX_34,
+        160,
+        &*TRAVITIA_FONT,
+        &body.classes[0],
+    );
 
-    if body.shield_name.len() < 18 {
+    if body.classes[1] != "No Class" {
         draw_text_mut(
             &mut blend,
             color,
-            165,
-            574,
-            PX_45_CONDENSED,
-            200,
+            70,
+            320,
+            PX_34,
+            160,
             &*TRAVITIA_FONT,
-            &body.shield_name,
+            &body.classes[1],
         );
-    } else {
-        let rows = wrap(&body.shield_name, 26);
-        for (i, line) in rows.iter().enumerate() {
-            draw_text_mut(
-                &mut blend,
-                color,
-                165,
-                574 + ((i as i32) * 20),
-                PX_19,
-                200,
-                &*TRAVITIA_FONT,
-                line,
-            );
-        }
     }
 
     draw_text_mut(
         &mut blend,
         color,
-        519,
-        49,
-        PX_52,
-        231,
+        650,
+        283,
+        PX_30,
+        140,
         &*TRAVITIA_FONT,
         &body.money,
     );
+
     draw_text_mut(
         &mut blend,
         color,
-        519,
-        121,
-        PX_52,
-        231,
-        &*TRAVITIA_FONT,
-        "soon\u{2122}",
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        519,
-        204,
-        PX_52,
-        231,
-        &*TRAVITIA_FONT,
-        &body.god,
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        519,
-        288,
-        PX_52,
-        231,
-        &*TRAVITIA_FONT,
-        &body.guild,
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        519,
-        379,
-        PX_52,
-        231,
-        &*TRAVITIA_FONT,
-        &body.marriage,
-    );
-    draw_text_mut(
-        &mut blend,
-        color,
-        519,
-        459,
-        PX_52,
-        231,
+        650,
+        332,
+        PX_30,
+        140,
         &*TRAVITIA_FONT,
         &body.pvp_wins,
     );
 
-    let mut adv = body.adventure.as_str().lines();
-    let line_1 = adv.next().unwrap();
-    // Is there a second line?
-    match adv.next() {
-        Some(line_2) => {
-            draw_text_mut(
-                &mut blend,
-                color,
-                519,
-                538,
-                PX_34,
-                231,
-                &*TRAVITIA_FONT,
-                line_1,
-            );
-            draw_text_mut(
-                &mut blend,
-                color,
-                519,
-                576,
-                PX_34,
-                231,
-                &*TRAVITIA_FONT,
-                line_2,
-            );
-        }
-        None => {
-            draw_text_mut(
-                &mut blend,
-                color,
-                519,
-                545,
-                PX_52,
-                231,
-                &*TRAVITIA_FONT,
-                line_1,
-            );
-        }
+    draw_text_mut(
+        &mut blend,
+        color,
+        650,
+        381,
+        PX_30,
+        140,
+        &*TRAVITIA_FONT,
+        &body.god,
+    );
+
+    let adventure_text = body
+        .adventure_name
+        .unwrap_or_else(|| String::from("No Adventure"));
+
+    draw_text_mut(
+        &mut blend,
+        color,
+        345,
+        298,
+        PX_34,
+        210,
+        &*TRAVITIA_FONT,
+        &adventure_text,
+    );
+
+    if let Some(time) = body.adventure_time {
+        draw_text_mut(
+            &mut blend,
+            color,
+            345,
+            369,
+            PX_34,
+            190,
+            &*TRAVITIA_FONT,
+            &time,
+        );
+    }
+
+    if let Some((_, item_name, stat)) = body.right_hand_item {
+        draw_text_mut(
+            &mut blend,
+            color,
+            345,
+            135,
+            PX_52,
+            325,
+            &*TRAVITIA_FONT,
+            &item_name,
+        );
+        draw_text_mut(
+            &mut blend,
+            color,
+            720,
+            135,
+            PX_52,
+            85,
+            &*TRAVITIA_FONT,
+            &stat,
+        );
+    }
+
+    if let Some((_, item_name, stat)) = body.left_hand_item {
+        draw_text_mut(
+            &mut blend,
+            color,
+            345,
+            206,
+            PX_52,
+            325,
+            &*TRAVITIA_FONT,
+            &item_name,
+        );
+        draw_text_mut(
+            &mut blend,
+            color,
+            720,
+            206,
+            PX_52,
+            85,
+            &*TRAVITIA_FONT,
+            &stat,
+        );
     }
 
     let final_image = encode_png(&blend.0)?;

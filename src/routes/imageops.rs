@@ -1,17 +1,14 @@
 use hyper::{Body, Response};
-use image::{imageops::invert, load_from_memory, Pixel, Rgba};
+use image::{
+    imageops::{invert, resize, FilterType},
+    load_from_memory, Pixel, Rgba,
+};
 use imageproc::edges::canny;
 use serde::Deserialize;
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{
-    cache::ImageCache,
-    encoder::encode_png,
-    error::Result,
-    proxy::Fetcher,
-    resize::{resize, FilterType},
-};
+use crate::{cache::ImageCache, encoder::encode_png, error::Result, proxy::Fetcher};
 
 #[derive(Deserialize)]
 pub struct ImageJson {
@@ -32,7 +29,7 @@ pub async fn pixelate(
 ) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?;
-    let buf = resize(img, 1024, 1024, FilterType::Box);
+    let buf = resize(&img, 1024, 1024, FilterType::Nearest);
     let final_image = encode_png(&buf)?;
 
     let tag = images.insert(final_image);
