@@ -6,7 +6,7 @@ Okapi is the image generation API for [IdleRPG](https://git.travitia.xyz/Kenvyra
 
 There is a [podman image](https://quay.io/repository/gelbpunkt/okapi) for okapi.
 
-There are several enviroment variables to configure it:
+There are several environment variables to configure it:
 
 - `PORT` sets the port to listen on. Defaults to 3000
 - `PROXY_URL` sets the URL for a custom proxy we use internally. Can be ignored.
