@@ -9,7 +9,7 @@ use hyper::{
     client::HttpConnector,
     Body, Client, Request, Uri,
 };
-use hyper_rustls::HttpsConnector;
+use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 use std::str::FromStr;
 
@@ -20,7 +20,15 @@ pub struct Fetcher {
 impl Fetcher {
     #[must_use]
     pub fn new() -> Self {
-        let client = Client::builder().build(HttpsConnector::with_webpki_roots());
+        let connector = HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_only()
+            .enable_http1()
+            .enable_http2()
+            .build();
+
+        let client = Client::builder().build(connector);
+
         Self { client }
     }
 

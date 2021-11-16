@@ -8,6 +8,7 @@ pub enum Error {
     Svg(usvg::Error),
     Json(serde_json::Error),
     PayloadTooBig,
+    ImageTooSmall,
     InvalidUri(hyper::http::uri::InvalidUri),
     Io(std::io::Error),
 }
@@ -72,7 +73,7 @@ impl Error {
                 .status(StatusCode::UNPROCESSABLE_ENTITY)
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"down- or upload error\", \"detail\": \"{}\"}}",
+                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
                     err
                 )))
                 .unwrap()
@@ -94,6 +95,25 @@ impl Error {
                 .body(Body::from(format!(
                     "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
                     err
+                )))
+                .unwrap()
+            }
+            Self::Json(err) => {
+                Response::builder()
+                .status(StatusCode::UNPROCESSABLE_ENTITY)
+                .header("content-type", "application/json")
+                .body(Body::from(format!(
+                    "{{\"status\": \"error\", \"reason\": \"invalid request JSON data\", \"detail\": \"{}\"}}",
+                    err
+                )))
+                .unwrap()
+            }
+            Self::ImageTooSmall => {
+                Response::builder()
+                .status(StatusCode::UNPROCESSABLE_ENTITY)
+                .header("content-type", "application/json")
+                .body(Body::from(String::from(
+                    "{\"status\": \"error\", \"reason\": \"background image too small\", \"detail\": \"background image must be at least 800x533 in size\"}",
                 )))
                 .unwrap()
             }

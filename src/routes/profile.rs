@@ -1,11 +1,3 @@
-use crate::{
-    cache::ImageCache,
-    constants::{CLASSES, DEFAULT_PROFILE, GUILD_RANKS, ITEM_TYPES, RACES, TRAVITIA_FONT},
-    encoder::encode_png,
-    error::Result,
-    proxy::Fetcher,
-};
-
 use ab_glyph::PxScale;
 use hyper::{Body, Response};
 use image::{
@@ -17,6 +9,14 @@ use imageproc::drawing::{draw_text_mut, Blend};
 use serde::Deserialize;
 
 use std::{io::Cursor, sync::Arc};
+
+use crate::{
+    cache::ImageCache,
+    constants::{CLASSES, DEFAULT_PROFILE, GUILD_RANKS, ITEM_TYPES, RACES, TRAVITIA_FONT},
+    encoder::encode_png,
+    error::{Error, Result},
+    proxy::Fetcher,
+};
 
 #[derive(Deserialize)]
 pub struct ProfileJson {
@@ -57,12 +57,22 @@ pub async fn genprofile(
         let mut limits = Limits::default();
         limits.max_image_width = Some(2000);
         limits.max_image_height = Some(2000);
+
         let buf = fetcher.fetch(image_url).await?;
+
         let b = Cursor::new(buf);
+
         let mut reader = Reader::new(b);
         reader.limits(limits);
         reader = reader.with_guessed_format()?;
-        reader.decode()?.to_rgba8()
+
+        let image = reader.decode()?.to_rgba8();
+
+        if image.height() < 533 || image.width() < 800 {
+            return Err(Error::ImageTooSmall);
+        }
+
+        image
     };
 
     overlay(&mut img, &RACES[&body.race.to_lowercase()], 6, 150);

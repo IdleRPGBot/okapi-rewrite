@@ -10,7 +10,7 @@ bytes = "1.0"
 dashmap = "4.0"
 env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty"] }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
-hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2"] }
+hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2", "tls12"] }
 image = { version = "0.24.0-alpha", default-features = false, features = [
     "jpeg",
     "png"
