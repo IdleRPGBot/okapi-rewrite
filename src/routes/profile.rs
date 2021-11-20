@@ -78,33 +78,53 @@ pub async fn genprofile(
         image
     };
 
-    overlay(&mut img, &RACES[&body.race.to_lowercase()], 6, 150);
+    overlay(&mut img, &RACES[&body.race.to_lowercase().as_str()], 6, 150);
 
     let class_icon_1 = &body.class_icons[0];
     let class_icon_2 = &body.class_icons[1];
 
     if class_icon_1 != "none" {
-        overlay(&mut img, &CLASSES[class_icon_1], 6, 244);
+        overlay(&mut img, &CLASSES[class_icon_1.as_str()], 6, 244);
     }
 
     if class_icon_2 != "none" {
-        overlay(&mut img, &CLASSES[class_icon_2], 6, 300);
+        overlay(&mut img, &CLASSES[class_icon_2.as_str()], 6, 300);
     }
 
     if let Some(rank) = body.guild_rank {
-        overlay(&mut img, &GUILD_RANKS[&rank.to_lowercase()], 610, 3);
+        overlay(
+            &mut img,
+            &GUILD_RANKS[&rank.to_lowercase().as_str()],
+            610,
+            3,
+        );
     }
 
     if let Some((item_type, _, _)) = &body.right_hand_item {
-        overlay(&mut img, &ITEM_TYPES[&item_type.to_lowercase()], 262, 117);
+        overlay(
+            &mut img,
+            &ITEM_TYPES[&item_type.to_lowercase().as_str()],
+            262,
+            117,
+        );
     }
 
     if let Some((item_type, _, _)) = &body.left_hand_item {
-        overlay(&mut img, &ITEM_TYPES[&item_type.to_lowercase()], 262, 188);
+        overlay(
+            &mut img,
+            &ITEM_TYPES[&item_type.to_lowercase().as_str()],
+            262,
+            188,
+        );
     }
 
     for (index, badge) in body.badges.iter().enumerate() {
-        overlay(&mut img, &BADGES[badge], BADGE_X_VALUES[index], 482);
+        overlay(
+            &mut img,
+            &BADGES[badge.as_str()],
+            BADGE_X_VALUES[index],
+            482,
+        );
     }
 
     let mut blend = Blend(img);
