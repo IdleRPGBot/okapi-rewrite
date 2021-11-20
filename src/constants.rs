@@ -26,9 +26,9 @@ lazy_static! {
             .expect("Could not load image")
             .into_rgba8();
     pub static ref PROFILE_LIGHT: RgbaImage =
-            load_from_memory(include_bytes!("../assets/images/profile_overlay_light.png"))
-                .expect("Could not load image")
-                .into_rgba8();
+        load_from_memory(include_bytes!("../assets/images/profile_overlay_light.png"))
+            .expect("Could not load image")
+            .into_rgba8();
     pub static ref DEFAULT_PROFILE: RgbaImage =
         load_from_memory(include_bytes!("../assets/images/profile.png"))
             .expect("Could not load image")
@@ -259,18 +259,14 @@ lazy_static! {
 
         let mut map: HashMap<String, RgbaImage> = HashMap::new();
         for (cast_name, bytes) in &all_badges {
-            /*map.insert(
-                (*cast_name).to_string(),
-                resize(
-                    load_from_memory(bytes).expect("Could not load image"),
-                    22,
-                    22,
-                    FilterType::Lanczos3,
-                ),
-            );*/
             map.insert(
                 (*cast_name).to_string(),
-                load_from_memory(bytes).expect("Could not load image").into_rgba8(),
+                resize(
+                    &load_from_memory(bytes).expect("Could not load image"),
+                    45,
+                    50,
+                    FilterType::Lanczos3,
+                ),
             );
         }
         map

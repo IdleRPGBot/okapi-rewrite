@@ -12,7 +12,7 @@ use std::{io::Cursor, sync::Arc};
 
 use crate::{
     cache::ImageCache,
-    constants::{CLASSES, DEFAULT_PROFILE, GUILD_RANKS, ITEM_TYPES, RACES, TRAVITIA_FONT},
+    constants::{BADGES, CLASSES, DEFAULT_PROFILE, GUILD_RANKS, ITEM_TYPES, RACES, TRAVITIA_FONT},
     encoder::encode_png,
     error::{Error, Result},
     proxy::Fetcher,
@@ -37,12 +37,15 @@ pub struct ProfileJson {
     god: String,
     adventure_name: Option<String>,
     adventure_time: Option<String>,
+    badges: Vec<String>,
 }
 
 const PX_52: PxScale = PxScale { x: 52.0, y: 52.0 };
 const PX_34: PxScale = PxScale { x: 34.0, y: 34.0 };
 const PX_30: PxScale = PxScale { x: 30.0, y: 30.0 };
 const PX_22: PxScale = PxScale { x: 22.0, y: 22.0 };
+
+const BADGE_X_VALUES: [i64; 8] = [50, 144, 234, 327, 422, 513, 616, 712];
 
 pub async fn genprofile(
     body: ProfileJson,
@@ -98,6 +101,10 @@ pub async fn genprofile(
 
     if let Some((item_type, _, _)) = &body.left_hand_item {
         overlay(&mut img, &ITEM_TYPES[&item_type.to_lowercase()], 262, 188);
+    }
+
+    for (index, badge) in body.badges.iter().enumerate() {
+        overlay(&mut img, &BADGES[badge], BADGE_X_VALUES[index], 482);
     }
 
     let mut blend = Blend(img);
