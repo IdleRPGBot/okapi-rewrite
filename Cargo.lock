@@ -446,7 +446,7 @@ dependencies = [
 [[package]]
 name = "image"
 version = "0.24.0-alpha"
-source = "git+https://github.com/Gelbpunkt/image.git?branch=export-enlargeable#933d95d326f8290f97b360c65d8bf3e74f28f067"
+source = "git+https://github.com/image-rs/image.git?branch=master#9d70ecf5b41cde89b7c724f9a76f7827acfad57e"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -461,7 +461,7 @@ dependencies = [
 [[package]]
 name = "imageproc-lite"
 version = "0.1.0"
-source = "git+https://github.com/Gelbpunkt/imageproc-lite.git#cc34b6ee1f8b9e07f2ddb7989cb38c5f54d80e19"
+source = "git+https://github.com/Gelbpunkt/imageproc-lite.git#518ecdb112a01883bb5839513a5da327efdeeb3a"
 dependencies = [
  "ab_glyph",
  "conv",

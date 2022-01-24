@@ -11,7 +11,7 @@ dashmap = "4.0"
 env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty"] }
 hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"] }
 hyper-proxy = { git = "https://github.com/Gelbpunkt/hyper-proxy", default-features = false, features = ["rustls-webpki"] }
-image = { git = "https://github.com/Gelbpunkt/image.git", branch = "export-enlargeable", default-features = false, features = [
+image = { git = "https://github.com/image-rs/image.git", branch = "master", default-features = false, features = [
     "jpeg",
     "png"
 ] }
