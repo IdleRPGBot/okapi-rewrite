@@ -3,7 +3,7 @@ use image::{
     imageops::{invert, resize, FilterType},
     load_from_memory, Pixel, Rgba,
 };
-use imageproc::edges::canny;
+use imageproc_lite::canny;
 use serde::Deserialize;
 
 use std::{collections::HashMap, sync::Arc};
@@ -25,7 +25,7 @@ struct Intensity {
 pub async fn pixelate(
     body: ImageJson,
     fetcher: Arc<Fetcher>,
-    images: ImageCache,
+    images: &ImageCache,
 ) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?;
@@ -43,7 +43,7 @@ pub async fn pixelate(
 pub async fn invert_endpoint(
     body: ImageJson,
     fetcher: Arc<Fetcher>,
-    images: ImageCache,
+    images: &ImageCache,
 ) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let mut img = load_from_memory(&res)?.to_rgba8();
@@ -61,7 +61,7 @@ pub async fn invert_endpoint(
 pub async fn edges_endpoint(
     body: ImageJson,
     fetcher: Arc<Fetcher>,
-    images: ImageCache,
+    images: &ImageCache,
 ) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?.to_luma8();
@@ -79,7 +79,7 @@ pub async fn edges_endpoint(
 pub async fn oil_endpoint(
     body: ImageJson,
     fetcher: Arc<Fetcher>,
-    images: ImageCache,
+    images: &ImageCache,
 ) -> Result<Response<Body>> {
     let res = fetcher.fetch(&body.image).await?;
     let img = load_from_memory(&res)?.to_rgba8();

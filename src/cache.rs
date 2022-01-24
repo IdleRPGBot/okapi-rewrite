@@ -1,31 +1,31 @@
 use dashmap::DashMap;
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use tokio::time::interval;
 
 use std::{
-    iter,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 
 use crate::constants::EXTERNAL_URL;
 
-fn random_identifier() -> String {
-    let mut rng = thread_rng();
-    iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
-        .map(char::from)
-        .take(20)
-        .collect()
+#[derive(Clone)]
+pub struct ImageCache(Arc<DashMap<String, (Vec<u8>, Instant)>>, Arc<AtomicU64>);
+
+impl Default for ImageCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
-#[derive(Clone)]
-pub struct ImageCache(Arc<DashMap<String, (Vec<u8>, Instant)>>);
-
 impl ImageCache {
+    #[must_use]
     pub fn new() -> Self {
         let map = Arc::new(DashMap::new());
-        let cache = Self(map);
+        let counter = Arc::new(AtomicU64::new(1));
+        let cache = Self(map, counter);
         let cache_clone = cache.clone();
 
         tokio::spawn(async move {
@@ -51,14 +51,16 @@ impl ImageCache {
         }
     }
 
+    #[must_use]
     pub fn get(&self, identifier: &str) -> Option<Vec<u8>> {
         self.0.get(identifier).map(|image| image.0.clone())
     }
 
+    #[must_use]
     pub fn insert(&self, image: Vec<u8>) -> String {
-        let identifier = random_identifier();
-        self.0.insert(identifier.clone(), (image, Instant::now()));
+        let counter = self.1.fetch_add(1, Ordering::SeqCst);
+        self.0.insert(counter.to_string(), (image, Instant::now()));
 
-        format!("{}/image?image={}", *EXTERNAL_URL, identifier)
+        format!("{}/image?image={}", *EXTERNAL_URL, counter)
     }
 }

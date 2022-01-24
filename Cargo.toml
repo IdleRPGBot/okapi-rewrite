@@ -9,27 +9,23 @@ ab_glyph = "0.2"
 bytes = "1.0"
 dashmap = "4.0"
 env_logger = { version = "0.9", default-features = false, features = ["termcolor", "atty"] }
-hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"]}
-hyper-rustls = { git = "https://github.com/rustls/hyper-rustls.git", default-features = false, features = ["webpki-tokio", "http1", "http2", "tls12"] }
-image = { version = "0.24.0-alpha", default-features = false, features = [
+hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"] }
+hyper-proxy = { git = "https://github.com/Gelbpunkt/hyper-proxy", default-features = false, features = ["rustls-webpki"] }
+image = { git = "https://github.com/Gelbpunkt/image.git", branch = "export-enlargeable", default-features = false, features = [
     "jpeg",
     "png"
 ] }
-imageproc = { git = "https://github.com/Gelbpunkt/imageproc", default_features = false }
+imageproc-lite = { git = "https://github.com/Gelbpunkt/imageproc-lite.git", default_features = false }
 lazy_static = "1.4"
 libc = { version = "0.2", default-features = false }
 log = "0.4"
-rand = "0.8"
-resvg = { version = "0.19", default-features = false }
+resvg = { version = "0.20", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7"
 tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
 tiny-skia = { version = "0.6", default-features = false }
-usvg = { version = "0.19", default-features = false }
-
-[patch.crates-io]
-image = { git = "https://github.com/image-rs/image.git", branch = "master" }
+usvg = { version = "0.20", default-features = false }
 
 [profile.release]
 codegen-units = 1

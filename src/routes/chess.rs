@@ -2,7 +2,7 @@ use hyper::{Body, Response};
 use image::RgbaImage;
 use resvg::render;
 use serde::Deserialize;
-use tiny_skia::Pixmap;
+use tiny_skia::{Pixmap, Transform};
 use usvg::{FitTo, Tree};
 
 use crate::{cache::ImageCache, encoder::encode_png, error::Result};
@@ -12,13 +12,13 @@ pub struct ChessJson {
     xml: String, // SVG
 }
 
-pub fn genchess(body: &ChessJson, images: ImageCache) -> Result<Response<Body>> {
+pub fn genchess(body: &ChessJson, images: &ImageCache) -> Result<Response<Body>> {
     let xml = &body.xml;
     let tree = Tree::from_str(xml, &usvg::Options::default().to_ref())?;
 
     // SAFETY: This only errors if width or height are 0
     let mut map = Pixmap::new(390, 390).unwrap();
-    render(&tree, FitTo::Width(390), map.as_mut()).unwrap();
+    render(&tree, FitTo::Width(390), Transform::default(), map.as_mut()).unwrap();
 
     let vect = map.take();
     // SAFETY: Only returns None if container too small

@@ -5,7 +5,7 @@ use image::{
     io::{Limits, Reader},
     Rgba,
 };
-use imageproc::drawing::{draw_text_mut, Blend};
+use imageproc_lite::{draw_text_mut, Blend};
 use serde::Deserialize;
 
 use std::{io::Cursor, sync::Arc};
@@ -50,7 +50,7 @@ const BADGE_X_VALUES: [i64; 8] = [50, 144, 234, 327, 422, 513, 616, 712];
 pub async fn genprofile(
     body: ProfileJson,
     fetcher: Arc<Fetcher>,
-    images: ImageCache,
+    images: &ImageCache,
 ) -> Result<Response<Body>> {
     let image_url = &body.image;
 

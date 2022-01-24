@@ -50,6 +50,7 @@ async fn handle(
     images: ImageCache,
 ) -> Result<Response<Body>, Error> {
     let start = Instant::now();
+    let images = &images;
 
     let (parts, body) = request.into_parts();
 
@@ -75,7 +76,7 @@ async fn handle(
     let response: error::Result<Response<Body>> = async {
         match (&method, path) {
             (&Method::POST, "/api/genadventures") => {
-                genadventures(&serde_json::from_reader(reader)?, images).await
+                genadventures(&serde_json::from_reader(reader)?, images)
             }
             (&Method::POST, "/api/genchess") => genchess(&serde_json::from_reader(reader)?, images),
             (&Method::POST, "/api/imageops/pixel") => {

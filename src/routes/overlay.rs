@@ -24,7 +24,7 @@ pub struct OverlayJson {
 pub async fn genoverlay(
     body: OverlayJson,
     fetcher: Arc<Fetcher>,
-    images: ImageCache,
+    images: &ImageCache,
 ) -> Result<Response<Body>> {
     let mut limits = Limits::default();
     limits.max_image_width = Some(2000);
