@@ -515,6 +515,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2b29bd4bc3f33391105ebee3589c19197c4271e3e5a9ec9bfe8127eeff8f082"
 dependencies = [
  "adler",
+ "simd-adler32",
 ]
 
 [[package]]
@@ -614,6 +615,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "log",
+ "miniz_oxide 0.5.1",
  "parking_lot",
  "resvg",
  "serde",
@@ -866,6 +868,12 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "simd-adler32"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14a5df39617d7c8558154693a1bb8157a4aab8179209540cc0b10e5dc24e0b18"
 
 [[package]]
 name = "simplecss"

@@ -19,6 +19,8 @@ imageproc-lite = { git = "https://github.com/Gelbpunkt/imageproc-lite.git", defa
 lazy_static = "1.4"
 libc = { version = "0.2", default-features = false }
 log = "0.4"
+# Enable this to trigger it in the PNG decoder
+miniz_oxide = { version = "0.5", default-features = false, features = ["simd"] }
 parking_lot = { version = "0.12", features = ["hardware-lock-elision", "nightly"] }
 resvg = { version = "0.22", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
