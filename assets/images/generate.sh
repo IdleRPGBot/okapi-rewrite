@@ -26,4 +26,8 @@ for image in contributor.png designer.png developer.png gamedesigner.png gamemas
     mogrify -resize 45 -quality 100% "${image}"
 done
 
-img-optimize ./ --jpg --png
+for fn in *.png ; do
+    zopflipng -m ${fn} ${fn}.tmp && mv -f ${fn}.tmp ${fn}
+done
+
+img-optimize ./ --jpg
