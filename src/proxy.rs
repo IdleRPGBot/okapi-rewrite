@@ -1,7 +1,4 @@
-use crate::{
-    constants::{PROXY_PASSWORD, PROXY_URL, PROXY_USER},
-    error::{Error, Result},
-};
+use std::str::FromStr;
 
 use bytes::Bytes;
 use hyper::{
@@ -11,7 +8,10 @@ use hyper::{
 };
 use hyper_proxy::{Intercept, Proxy, ProxyConnector};
 
-use std::str::FromStr;
+use crate::{
+    constants::{PROXY_PASSWORD, PROXY_URL, PROXY_USER},
+    error::{Error, Result},
+};
 
 pub struct Fetcher {
     client: Client<ProxyConnector<HttpConnector>>,

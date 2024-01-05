@@ -37,7 +37,7 @@ pub fn genadventures(body: &AdventuresJson, images: &ImageCache) -> Result<Respo
             SCALE,
             100,
             &*TRAVITIA_FONT,
-            &format!("{}% to", chance_min),
+            &format!("{chance_min}% to"),
         );
         draw_text_mut(
             &mut new_image,
@@ -47,7 +47,7 @@ pub fn genadventures(body: &AdventuresJson, images: &ImageCache) -> Result<Respo
             SCALE,
             100,
             &*TRAVITIA_FONT,
-            &format!("{}%", chance_max),
+            &format!("{chance_max}%"),
         );
 
         let buf = encode_png(&new_image)?;
@@ -63,5 +63,5 @@ pub fn genadventures(body: &AdventuresJson, images: &ImageCache) -> Result<Respo
     Ok(Response::builder()
         .status(200)
         .header("content-type", "application/json")
-        .body(Body::from(format!("{:?}", tags)))?)
+        .body(Body::from(format!("{tags:?}")))?)
 }

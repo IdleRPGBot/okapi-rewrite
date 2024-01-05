@@ -1,8 +1,9 @@
+use std::{collections::HashMap, env::var, str::FromStr};
+
 use ab_glyph::FontVec;
 use hyper::Uri;
 use image::{load_from_memory, RgbImage, RgbaImage};
 use lazy_static::lazy_static;
-use std::{collections::HashMap, env::var, str::FromStr};
 
 lazy_static! {
     pub static ref PORT: u16 = var("PORT")

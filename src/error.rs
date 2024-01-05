@@ -5,8 +5,8 @@ pub enum Error {
     Image(image::ImageError),
     Hyper(hyper::Error),
     Http(hyper::http::Error),
-    Svg(usvg::Error),
-    Json(serde_json::Error),
+    Svg(resvg::usvg::Error),
+    Json(simd_json::Error),
     PayloadTooBig,
     ImageTooSmall,
     InvalidUri(hyper::http::uri::InvalidUri),
@@ -31,14 +31,14 @@ impl From<hyper::http::Error> for Error {
     }
 }
 
-impl From<usvg::Error> for Error {
-    fn from(err: usvg::Error) -> Self {
+impl From<resvg::usvg::Error> for Error {
+    fn from(err: resvg::usvg::Error) -> Self {
         Self::Svg(err)
     }
 }
 
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Self {
+impl From<simd_json::Error> for Error {
+    fn from(err: simd_json::Error) -> Self {
         Self::Json(err)
     }
 }
@@ -64,8 +64,7 @@ impl Error {
                 .status(StatusCode::UNPROCESSABLE_ENTITY)
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"invalid SVG data\", \"detail\": \"{}\"}}",
-                    err
+                    "{{\"status\": \"error\", \"reason\": \"invalid SVG data\", \"detail\": \"{err}\"}}"
                 ))).unwrap()
             }
             Self::Hyper(err) => {
@@ -73,8 +72,7 @@ impl Error {
                 .status(StatusCode::UNPROCESSABLE_ENTITY)
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{}\"}}",
-                    err
+                    "{{\"status\": \"error\", \"reason\": \"download error\", \"detail\": \"{err}\"}}"
                 )))
                 .unwrap()
             }
@@ -83,8 +81,7 @@ impl Error {
                 .status(StatusCode::UNPROCESSABLE_ENTITY)
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
-                    err
+                    "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{err}\"}}"
                 )))
                 .unwrap()
             }
@@ -93,8 +90,7 @@ impl Error {
                 .status(StatusCode::UNPROCESSABLE_ENTITY)
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{}\"}}",
-                    err
+                    "{{\"status\": \"error\", \"reason\": \"invalid image data\", \"detail\": \"{err}\"}}"
                 )))
                 .unwrap()
             }
@@ -103,8 +99,7 @@ impl Error {
                 .status(StatusCode::UNPROCESSABLE_ENTITY)
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    "{{\"status\": \"error\", \"reason\": \"invalid request JSON data\", \"detail\": \"{}\"}}",
-                    err
+                    "{{\"status\": \"error\", \"reason\": \"invalid request JSON data\", \"detail\": \"{err}\"}}"
                 )))
                 .unwrap()
             }

@@ -7,7 +7,7 @@ linker = "aarch64-linux-musl-gcc"
 rustflags = ["-L", "native=/aarch64-linux-musl-cross/aarch64-linux-musl/lib", "-L", "native=/aarch64-linux-musl-cross/lib/gcc/aarch64-linux-musl/11.2.1/", "-l", "static=gcc", "-Z", "mir-opt-level=3"]
 
 [target.x86_64-unknown-linux-musl]
-rustflags = ["-C", "target-cpu=native", "-L", "native=/usr/lib", "-Z", "mir-opt-level=3"]
+rustflags = ["-C", "target-cpu=znver2", "-L", "native=/usr/lib", "-Z", "mir-opt-level=3"]
 
 [target.x86_64-unknown-linux-gnu]
 rustflags = ["-C", "target-cpu=native", "-Z", "mir-opt-level=3"]

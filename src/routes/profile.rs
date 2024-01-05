@@ -1,3 +1,5 @@
+use std::{io::Cursor, sync::Arc};
+
 use ab_glyph::PxScale;
 use hyper::{Body, Response};
 use image::{
@@ -7,8 +9,6 @@ use image::{
 };
 use imageproc_lite::{draw_text_mut, Blend};
 use serde::Deserialize;
-
-use std::{io::Cursor, sync::Arc};
 
 use crate::{
     cache::ImageCache,
@@ -164,7 +164,7 @@ pub async fn genprofile(
     );
 
     if let Some(marriage) = body.marriage {
-        let text = format!("married to {}", marriage);
+        let text = format!("married to {marriage}");
 
         draw_text_mut(
             &mut blend,

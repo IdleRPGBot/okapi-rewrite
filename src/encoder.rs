@@ -1,9 +1,9 @@
+use std::ops::Deref;
+
 use image::{
     codecs::png::{CompressionType, FilterType, PngEncoder},
     ImageBuffer, ImageEncoder, ImageError, Pixel, PixelWithColorType,
 };
-
-use std::ops::Deref;
 
 pub fn encode_png<P, Container>(img: &ImageBuffer<P, Container>) -> Result<Vec<u8>, ImageError>
 where

@@ -1,11 +1,11 @@
+use std::{io::Cursor, sync::Arc};
+
 use hyper::{Body, Response};
 use image::{
     imageops::{overlay, resize, FilterType},
     io::{Limits, Reader},
 };
 use serde::Deserialize;
-
-use std::{io::Cursor, sync::Arc};
 
 use crate::{
     cache::ImageCache,

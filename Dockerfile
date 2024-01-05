@@ -8,7 +8,7 @@ ARG MUSL_TARGET
 ARG RUST_TARGET
 
 RUN apk upgrade && \
-    apk add curl gcc g++ musl-dev && \
+    apk add curl cmake gcc g++ make musl-dev && \
     curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly --component rust-src -y
 
 RUN source $HOME/.cargo/env && \

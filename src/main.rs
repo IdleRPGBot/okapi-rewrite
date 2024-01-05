@@ -1,4 +1,4 @@
-#![deny(clippy::pedantic)]
+#![deny(clippy::pedantic, clippy::nursery)]
 #![allow(
     clippy::cast_possible_wrap,
     clippy::cast_possible_truncation,
@@ -8,6 +8,8 @@
     clippy::missing_errors_doc,
     clippy::module_name_repetitions
 )]
+use std::{convert::Infallible, env::set_var, net::SocketAddr, sync::Arc, time::Instant};
+
 use bytes::Buf;
 use hyper::{
     service::{make_service_fn, service_fn},
@@ -16,8 +18,6 @@ use hyper::{
 use libc::{c_int, sighandler_t, signal, SIGINT, SIGTERM};
 use log::{error, info};
 use serde::Deserialize;
-
-use std::{convert::Infallible, env::set_var, net::SocketAddr, sync::Arc, time::Instant};
 
 use crate::{
     cache::ImageCache,
@@ -76,42 +76,44 @@ async fn handle(
     let response: error::Result<Response<Body>> = async {
         match (&method, path) {
             (&Method::POST, "/api/genadventures") => {
-                genadventures(&serde_json::from_reader(reader)?, images)
+                genadventures(&simd_json::from_reader(reader)?, images)
             }
-            (&Method::POST, "/api/genchess") => genchess(&serde_json::from_reader(reader)?, images),
+            (&Method::POST, "/api/genchess") => genchess(&simd_json::from_reader(reader)?, images),
             (&Method::POST, "/api/imageops/pixel") => {
-                pixelate(serde_json::from_reader(reader)?, fetcher, images).await
+                pixelate(simd_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/imageops/invert") => {
-                invert_endpoint(serde_json::from_reader(reader)?, fetcher, images).await
+                invert_endpoint(simd_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/imageops/edges") => {
-                edges_endpoint(serde_json::from_reader(reader)?, fetcher, images).await
+                edges_endpoint(simd_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/imageops/oil") => {
-                oil_endpoint(serde_json::from_reader(reader)?, fetcher, images).await
+                oil_endpoint(simd_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/genoverlay") => {
-                genoverlay(serde_json::from_reader(reader)?, fetcher, images).await
+                genoverlay(simd_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::POST, "/api/genprofile") => {
-                genprofile(serde_json::from_reader(reader)?, fetcher, images).await
+                genprofile(simd_json::from_reader(reader)?, fetcher, images).await
             }
             (&Method::GET, "/") => index(),
-            (&Method::GET, "/image") => match query {
-                Some(query) => match serde_urlencoded::from_str::<GetImage>(query) {
-                    Ok(get_image) => match images.get(&get_image.image) {
-                        Some(image) => Ok(Response::builder()
-                            .status(200)
-                            .header("Content-Type", "image/png")
-                            .body(Body::from(image))
-                            .unwrap()),
-                        None => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
-                    },
+            (&Method::GET, "/image") => query.map_or_else(
+                || Ok(Response::builder().status(400).body(Body::empty()).unwrap()),
+                |query| match serde_urlencoded::from_str::<GetImage>(query) {
+                    Ok(get_image) => images.get(&get_image.image).map_or_else(
+                        || Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
+                        |image| {
+                            Ok(Response::builder()
+                                .status(200)
+                                .header("Content-Type", "image/png")
+                                .body(Body::from(image))
+                                .unwrap())
+                        },
+                    ),
                     Err(_) => Ok(Response::builder().status(400).body(Body::empty()).unwrap()),
                 },
-                None => Ok(Response::builder().status(400).body(Body::empty()).unwrap()),
-            },
+            ),
             _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
         }
     }

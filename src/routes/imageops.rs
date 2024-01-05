@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::Arc};
+
 use hyper::{Body, Response};
 use image::{
     imageops::{invert, resize, FilterType},
@@ -5,8 +7,6 @@ use image::{
 };
 use imageproc_lite::canny;
 use serde::Deserialize;
-
-use std::{collections::HashMap, sync::Arc};
 
 use crate::{cache::ImageCache, encoder::encode_png, error::Result, proxy::Fetcher};
 
@@ -117,7 +117,7 @@ pub async fn oil_endpoint(
                         let idx_y = yyy as usize;
                         let intensity_val = intensity_lut[idx_y][idx_x];
                         let pix = img.get_pixel(idx_x as u32, idx_y as u32).channels();
-                        match pixel_intensity_count.get_mut(&(intensity_val as usize)) {
+                        match pixel_intensity_count.get_mut(&intensity_val) {
                             Some(val) => {
                                 val.val += 1;
                                 val.r += i32::from(pix[0]);
@@ -126,7 +126,7 @@ pub async fn oil_endpoint(
                             }
                             None => {
                                 pixel_intensity_count.insert(
-                                    intensity_val as usize,
+                                    intensity_val,
                                     Intensity {
                                         val: 1,
                                         r: i32::from(pix[0]),
