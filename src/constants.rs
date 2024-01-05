@@ -1,7 +1,6 @@
-use std::{collections::HashMap, env::var, str::FromStr};
+use std::{collections::HashMap, env::var};
 
 use ab_glyph::FontVec;
-use hyper::Uri;
 use image::{load_from_memory, RgbImage, RgbaImage};
 use lazy_static::lazy_static;
 
@@ -10,12 +9,6 @@ lazy_static! {
         .unwrap_or_else(|_| String::from("3000"))
         .parse::<u16>()
         .unwrap();
-    pub static ref PROXY_URL: Uri = var("PROXY_URL")
-        .map(|p| Uri::from_str(&p).unwrap())
-        .expect("PROXY_URL is required");
-    pub static ref PROXY_USER: String = var("PROXY_USERNAME").expect("PROXY_USERNAME is required");
-    pub static ref PROXY_PASSWORD: String =
-        var("PROXY_PASSWORD").expect("PROXY_PASSWORD is required");
     pub static ref AUTH_KEY: Option<String> = var("AUTH_KEY").ok();
     pub static ref EXTERNAL_URL: String =
         var("EXTERNAL_URL").unwrap_or(format!("http://localhost:{}", *PORT));

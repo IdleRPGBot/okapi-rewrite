@@ -12,7 +12,7 @@ use crate::{
     constants::{PROFILE_DARK, PROFILE_LIGHT},
     encoder::encode_png,
     error::Result,
-    proxy::Fetcher,
+    fetcher::Fetcher,
 };
 
 #[derive(Deserialize)]

@@ -11,6 +11,8 @@ pub enum Error {
     ImageTooSmall,
     InvalidUri(hyper::http::uri::InvalidUri),
     Io(std::io::Error),
+    InvalidImageHost,
+    Ratelimited,
 }
 
 impl From<hyper::Error> for Error {
@@ -109,6 +111,24 @@ impl Error {
                 .header("content-type", "application/json")
                 .body(Body::from(String::from(
                     "{\"status\": \"error\", \"reason\": \"background image too small\", \"detail\": \"background image must be at least 800x533 in size\"}",
+                )))
+                .unwrap()
+            }
+            Self::InvalidImageHost => {
+                Response::builder()
+                .status(StatusCode::UNPROCESSABLE_ENTITY)
+                .header("content-type", "application/json")
+                .body(Body::from(String::from(
+                    "{\"status\": \"error\", \"reason\": \"invalid image host\", \"detail\": \"custom backgrounds must be hosted on a trusted domain\"}",
+                )))
+                .unwrap()
+            }
+            Self::Ratelimited => {
+                Response::builder()
+                .status(StatusCode::UNPROCESSABLE_ENTITY)
+                .header("content-type", "application/json")
+                .body(Body::from(String::from(
+                    "{\"status\": \"error\", \"reason\": \"ratelimited\", \"detail\": \"the custom background image host has ratelimited or banned our IP\"}",
                 )))
                 .unwrap()
             }

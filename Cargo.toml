@@ -10,11 +10,24 @@ bytes = "1.0"
 dashmap = { version = "5.1", default-features = false }
 env_logger = { version = "0.10", default-features = false }
 flate2 = { version = "1", default-features = false, features = ["zlib-ng"] }
-hyper = { version = "0.14", default-features = false, features = ["server", "client", "tcp", "http1", "http2"] }
-hyper-proxy = { git = "https://github.com/Gelbpunkt/hyper-proxy", default-features = false, features = ["rustls-webpki"] }
+hyper = { version = "0.14", default-features = false, features = [
+    "server",
+    "client",
+    "tcp",
+    "http1",
+    "http2",
+] }
+hyper-rustls = { version = "0.25", default-features = false, features = [
+    "http1",
+    "http2",
+    "ring",
+    "tls12",
+    "tokio-runtime",
+    "webpki-tokio",
+] }
 image = { git = "https://github.com/image-rs/image.git", branch = "master", default-features = false, features = [
     "jpeg",
-    "png"
+    "png",
 ] }
 imageproc-lite = { git = "https://github.com/Gelbpunkt/imageproc-lite.git", default_features = false }
 lazy_static = "1.4"
@@ -22,13 +35,20 @@ libc = { version = "0.2", default-features = false }
 log = "0.4"
 # Enable this to trigger it in the PNG decoder
 miniz_oxide = { version = "0.7", default-features = false, features = ["simd"] }
-parking_lot = { version = "0.12", features = ["hardware-lock-elision", "nightly"] }
 resvg = { version = "0.37", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_urlencoded = "0.7"
-simd-json = { version = "0.13", default-features = false, features = ["serde_impl"] }
-tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
-tiny-skia = { version = "0.11", default-features = false, features = ["simd", "std"] }
+simd-json = { version = "0.13", default-features = false, features = [
+    "serde_impl",
+] }
+tokio = { version = "1", default-features = false, features = [
+    "macros",
+    "rt-multi-thread",
+] }
+tiny-skia = { version = "0.11", default-features = false, features = [
+    "simd",
+    "std",
+] }
 
 [profile.dev]
 panic = "abort"

@@ -15,7 +15,7 @@ use crate::{
     constants::{BADGES, CLASSES, DEFAULT_PROFILE, GUILD_RANKS, ITEM_TYPES, RACES, TRAVITIA_FONT},
     encoder::encode_png,
     error::{Error, Result},
-    proxy::Fetcher,
+    fetcher::Fetcher,
 };
 
 #[derive(Deserialize)]

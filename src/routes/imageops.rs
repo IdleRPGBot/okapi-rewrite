@@ -8,7 +8,7 @@ use image::{
 use imageproc_lite::canny;
 use serde::Deserialize;
 
-use crate::{cache::ImageCache, encoder::encode_png, error::Result, proxy::Fetcher};
+use crate::{cache::ImageCache, encoder::encode_png, error::Result, fetcher::Fetcher};
 
 #[derive(Deserialize)]
 pub struct ImageJson {

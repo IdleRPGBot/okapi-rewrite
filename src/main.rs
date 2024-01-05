@@ -36,7 +36,7 @@ pub mod cache;
 pub mod constants;
 pub mod encoder;
 pub mod error;
-pub mod proxy;
+pub mod fetcher;
 pub mod routes;
 
 #[derive(Deserialize)]
@@ -46,7 +46,7 @@ struct GetImage {
 
 async fn handle(
     request: Request<Body>,
-    fetcher: Arc<proxy::Fetcher>,
+    fetcher: Arc<fetcher::Fetcher>,
     images: ImageCache,
 ) -> Result<Response<Body>, Error> {
     let start = Instant::now();
@@ -155,7 +155,7 @@ async fn main() {
 
     info!("okapi starting on {}", listen_address);
 
-    let client = Arc::new(proxy::Fetcher::new());
+    let client = Arc::new(fetcher::Fetcher::new());
     let images = ImageCache::new();
 
     let make_service = make_service_fn(|_conn| {
